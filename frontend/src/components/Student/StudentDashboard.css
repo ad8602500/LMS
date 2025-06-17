@@ -1,9 +1,15 @@
-/* No longer needed as Material-UI handles layout and card styling */
-
-.admin-dashboard {
+.student-dashboard {
   padding: 20px;
   background-color: #f4f7f6;
   min-height: calc(100vh - 60px); /* Adjust based on your header/footer height */
+}
+
+.dashboard-header h1 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 2em;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
 }
 
 .dashboard-content {
@@ -50,15 +56,47 @@
 }
 
 .card-body ul li {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  padding-left: 15px;
+  position: relative;
+}
+
+.messages-card .card-body ul li:before {
+  content: '\2022'; /* Bullet point */
+  color: #007bff; /* Blue for messages */
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+}
+
+.happening-card .card-body ul li {
+  border-left: 3px solid #28a745; /* Green line */
+  padding-left: 12px;
+}
+
+.click-here-link {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.click-here-link:hover {
+  text-decoration: underline;
 }
 
 .card-footer {
   display: flex;
-  justify-content: flex-end; /* Align buttons to the right */
+  justify-content: space-between;
+  align-items: center;
   margin-top: 15px;
   padding-top: 10px;
   border-top: 1px solid #eee;
+}
+
+.event-note {
+  font-size: 0.8em;
+  color: #777;
 }
 
 .view-more-button, .all-messages-button {
@@ -74,14 +112,4 @@
 
 .view-more-button:hover, .all-messages-button:hover {
   background-color: #0056b3;
-}
-
-.dashboard-link {
-  color: #007bff;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.dashboard-link:hover {
-  text-decoration: underline;
 } 

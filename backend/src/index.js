@@ -15,12 +15,13 @@ import studentRoutes from './routes/student.js';
 import classRoutes from './routes/class.js';
 import timetableRoutes from './routes/timetable.js';
 import adminRoutes from './routes/admin.js';
+import teacherDashboardRoutes from './routes/teacherDashboard.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: '../.env' });
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use('/api/admin/students', studentRoutes);
 app.use('/api/admin/classes', classRoutes);
 app.use('/api/admin/timetable', timetableRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/teacher/dashboard', teacherDashboardRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

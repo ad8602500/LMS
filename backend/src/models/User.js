@@ -19,6 +19,12 @@ const userSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  userId: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
   password: {
     type: String,
     required: true
@@ -30,11 +36,71 @@ const userSchema = new mongoose.Schema({
   },
   schoolId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'School'
+    ref: 'School',
+    required: function() {
+      return this.role !== 'SUPER_ADMIN';
+    }
+  },
+  // Teacher-specific fields (optional, required if role is TEACHER)
+  subject: {
+    type: String,
+    trim: true,
+    required: function() { return this.role === 'TEACHER'; }
+  },
+  qualification: {
+    type: String,
+    trim: true,
+    required: function() { return this.role === 'TEACHER'; }
+  },
+  joiningDate: {
+    type: Date,
+    required: function() { return this.role === 'TEACHER'; }
+  },
+  image: {
+    type: String,
+    default: null
+  },
+  // Student-specific fields (optional, required if role is STUDENT)
+  classId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Class',
+    required: function() { return this.role === 'STUDENT'; }
+  },
+  section: {
+    type: String,
+    trim: true,
+    required: function() { return this.role === 'STUDENT'; }
+  },
+  rollNo: {
+    type: String,
+    trim: true,
+    unique: function() { return this.role === 'STUDENT'; },
+    sparse: true, // Allows null values if not unique for other roles
+    required: function() { return this.role === 'STUDENT'; }
+  },
+  admissionNo: {
+    type: String,
+    trim: true,
+    unique: function() { return this.role === 'STUDENT'; },
+    sparse: true, // Allows null values if not unique for other roles
+    required: function() { return this.role === 'STUDENT'; }
+  },
+  parentName: {
+    type: String,
+    trim: true,
+    required: function() { return this.role === 'STUDENT'; }
+  },
+  parentPhone: {
+    type: String,
+    trim: true,
+    required: function() { return this.role === 'STUDENT'; }
   },
   isActive: {
     type: Boolean,
     default: true
+  },
+  lastLogin: {
+    type: Date
   },
   createdAt: {
     type: Date,

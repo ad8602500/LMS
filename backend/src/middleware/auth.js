@@ -6,20 +6,21 @@ export const auth = async (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
-      return res.status(401).json({ message: 'No authentication token, access denied' });
+      return res.status(401).json({ message: 'Authentication required' });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findOne({ _id: decoded.userId });
+    const user = await User.findOne({ _id: decoded.userId, isActive: true });
 
     if (!user) {
-      return res.status(401).json({ message: 'User not found' });
+      return res.status(401).json({ message: 'User not found or inactive' });
     }
 
+    req.token = token;
     req.user = user;
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Token is invalid' });
+    res.status(401).json({ message: 'Please authenticate' });
   }
 };
 
@@ -30,7 +31,9 @@ export const checkRole = (roles) => {
     }
 
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Access denied: insufficient permissions' });
+      return res.status(403).json({ 
+        message: 'Access denied. Insufficient permissions.' 
+      });
     }
 
     next();

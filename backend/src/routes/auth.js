@@ -5,17 +5,8 @@ import User from '../models/User.js';
 import School from '../models/School.js';
 import { auth, checkRole } from '../middleware/auth.js';
 import bcrypt from 'bcryptjs';
-import nodemailer from 'nodemailer';
 
 const router = express.Router();
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'yourgmail@gmail.com',
-    pass: 'your-app-password' // Use an App Password, not your main Gmail password
-  }
-});
 
 // Create initial super admin (should be called only once)
 router.post('/create-super-admin', async (req, res) => {
@@ -26,35 +17,23 @@ router.post('/create-super-admin', async (req, res) => {
       return res.status(400).json({ message: 'Super admin already exists' });
     }
 
-    // Create a default school for super admin
-    const defaultSchool = new School({
-      name: 'System School',
-      schoolId: 'SYSTEM',
-      address: 'System Address',
-      contactEmail: 'system@lms.com',
-      contactPhone: '0000000000'
-    });
-    await defaultSchool.save();
-
-    // Create super admin with specified details
+    // Create super admin
     const superAdmin = new User({
-      userId: '121',
-      schoolId: defaultSchool._id,
-      email: 'aditya@lms.com',
-      password: '1138',
+      userId: 'SUPER_ADMIN',
+      email: 'admin@lms.com',
+      password: 'admin123',
       role: 'SUPER_ADMIN',
-      firstName: 'Aditya',
+      firstName: 'Super',
       lastName: 'Admin',
       isActive: true
     });
+
     await superAdmin.save();
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: 'Super admin created successfully',
       user: {
         userId: superAdmin.userId,
-        firstName: superAdmin.firstName,
-        lastName: superAdmin.lastName,
         email: superAdmin.email,
         role: superAdmin.role
       }
@@ -67,109 +46,73 @@ router.post('/create-super-admin', async (req, res) => {
 
 // Login route
 router.post('/login', [
-  body('userId').notEmpty().trim(),
-  body('password').notEmpty(),
   body('schoolId').optional().trim(),
-  body('role').optional().trim()
+  body('userId').notEmpty().trim(),
+  body('password').notEmpty()
 ], async (req, res) => {
   try {
-    // Check if JWT_SECRET is configured
-    if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET is not configured');
-      return res.status(500).json({ 
-        message: 'Server configuration error',
-        details: 'JWT secret is not configured'
-      });
-    }
-
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array());
-      return res.status(400).json({ 
-        message: 'Invalid request data',
-        errors: errors.array() 
-      });
+      return res.status(400).json({ errors: errors.array() });
     }
 
-    const { schoolId, userId, password, role } = req.body;
-    console.log('Login attempt:', { userId, schoolId, role });
+    const { schoolId, userId, password } = req.body;
+    console.log('Login attempt:', { schoolId, userId });
 
-    // For SuperAdmin login
-    if (role === 'SUPER_ADMIN' || !schoolId) {
-      console.log('Attempting super admin login...');
-      
-      const superAdmin = await User.findOne({ 
+    // For Super Admin login
+    if (!schoolId) {
+      console.log('Attempting Super Admin login...');
+      const superAdmin = await User.findOne({
         userId,
         role: 'SUPER_ADMIN',
         isActive: true
       });
 
-      console.log('Found super admin:', superAdmin ? {
-        userId: superAdmin.userId,
-        email: superAdmin.email,
-        isActive: superAdmin.isActive,
-        role: superAdmin.role
-      } : 'No super admin found');
-
       if (!superAdmin) {
-        return res.status(401).json({ 
-          message: 'Invalid credentials',
-          details: 'Super admin not found or inactive'
-        });
+        console.log('Super Admin not found');
+        return res.status(401).json({ message: 'Invalid credentials' });
       }
 
       const isMatch = await superAdmin.comparePassword(password);
-      console.log('Password match result:', isMatch);
-
       if (!isMatch) {
-        return res.status(401).json({ 
-          message: 'Invalid credentials',
-          details: 'Password does not match'
-        });
+        console.log('Super Admin password mismatch');
+        return res.status(401).json({ message: 'Invalid credentials' });
       }
 
       // Update last login
       superAdmin.lastLogin = new Date();
       await superAdmin.save();
 
-      try {
-        // Generate token
-        const token = jwt.sign(
-          { userId: superAdmin._id, role: superAdmin.role },
-          process.env.JWT_SECRET,
-          { expiresIn: '24h' }
-        );
+      const token = jwt.sign(
+        { userId: superAdmin._id, role: superAdmin.role },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      );
 
-        console.log('Login successful, sending response...');
-
-        return res.json({
-          token,
-          user: {
-            id: superAdmin._id,
-            userId: superAdmin.userId,
-            role: superAdmin.role,
-            firstName: superAdmin.firstName,
-            lastName: superAdmin.lastName,
-            email: superAdmin.email
-          }
-        });
-      } catch (jwtError) {
-        console.error('JWT signing error:', jwtError);
-        return res.status(500).json({ 
-          message: 'Server error',
-          details: 'Error generating authentication token'
-        });
-      }
+      return res.json({
+        token,
+        user: {
+          id: superAdmin._id,
+          userId: superAdmin.userId,
+          role: superAdmin.role,
+          firstName: superAdmin.firstName,
+          lastName: superAdmin.lastName,
+          email: superAdmin.email
+        }
+      });
     }
 
-    // For other users (School Admin, Teacher, Student)
-    const school = await School.findOne({ schoolId });
+    // For School Users (Admin, Teacher, Student)
+    console.log('Searching for school:', schoolId);
+    const school = await School.findOne({ schoolId, isActive: true });
     if (!school) {
-      return res.status(404).json({ message: 'School not found' });
+      console.log('School not found or inactive:', schoolId);
+      return res.status(404).json({ message: 'School not found or inactive' });
     }
 
-    // Try to find user by userId or email
-    const user = await User.findOne({ 
+    console.log('Searching for user in school:', school._id);
+    // Find user in the school
+    const user = await User.findOne({
       $or: [
         { userId: userId },
         { email: userId }
@@ -179,40 +122,48 @@ router.post('/login', [
     });
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      console.log('User not found in school');
+      return res.status(401).json({ 
+        message: 'Invalid credentials',
+        details: 'User not found in the specified school'
+      });
     }
 
+    console.log('User found, checking password');
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      console.log('Password mismatch');
+      return res.status(401).json({ 
+        message: 'Invalid credentials',
+        details: 'Password is incorrect'
+      });
     }
 
     // Update last login
     user.lastLogin = new Date();
     await user.save();
 
-    // Generate token
     const token = jwt.sign(
-      { userId: user._id, role: user.role },
+      { userId: user._id, role: user.role, schoolId: school._id },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    console.log('Login successful for user:', user.userId);
     res.json({
       token,
-      user: {
-        id: user._id,
-        userId: user.userId,
-        schoolId: school._id,
-        role: user.role,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email
-      }
+      user: userResponse
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      message: 'Server error',
+      details: error.message
+    });
   }
 });
 
@@ -228,8 +179,7 @@ router.post('/register-school', [
   body('adminEmail').isEmail(),
   body('adminPassword').isLength({ min: 6 }),
   body('adminFirstName').notEmpty(),
-  body('adminLastName').notEmpty(),
-  body('admissionDate').isDate()
+  body('adminLastName').notEmpty()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -246,12 +196,14 @@ router.post('/register-school', [
       adminEmail,
       adminPassword,
       adminFirstName,
-      adminLastName,
-      admissionDate
+      adminLastName
     } = req.body;
 
-    const admissionDateObj = new Date(admissionDate);
-    const admissionYear = admissionDateObj.getFullYear();
+    // Check if school ID already exists
+    const existingSchool = await School.findOne({ schoolId });
+    if (existingSchool) {
+      return res.status(400).json({ message: 'School ID already exists' });
+    }
 
     // Create school
     const school = new School({
@@ -261,73 +213,38 @@ router.post('/register-school', [
       contactEmail,
       contactPhone
     });
+
     await school.save();
 
-    // Create admin user
-    const userId = generateStudentUserId(admissionYear);
-    const password = generatePassword();
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = new User({
-      userId,
-      schoolId: school._id,
+    // Create school admin
+    const admin = new User({
+      userId: `ADMIN_${schoolId}`,
       email: adminEmail,
-      password: hashedPassword,
+      password: adminPassword,
       role: 'ADMIN',
       firstName: adminFirstName,
       lastName: adminLastName,
-      admissionYear: admissionYear
+      schoolId: school._id,
+      isActive: true
     });
-    await user.save();
 
-    // Send email with credentials
-    const mailOptions = {
-      from: 'yourgmail@gmail.com',
-      to: adminEmail,
-      subject: 'School Admin Account Information',
-      text: `
-        Dear ${adminFirstName} ${adminLastName},
+    await admin.save();
 
-        You have been successfully registered as an admin for the school "${name}".
-
-        Here are your login details:
-        - User ID: ${userId}
-        - Password: ${password}
-
-        Please log in to the system using these credentials.
-
-        Best regards,
-        LMS Team
-      `
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error('Error sending email:', error);
-        return res.status(500).json({ message: 'Email sending failed' });
+    res.status(201).json({
+      message: 'School registered successfully',
+      school: {
+        id: school._id,
+        name: school.name,
+        schoolId: school.schoolId
+      },
+      admin: {
+        id: admin._id,
+        email: admin.email,
+        role: admin.role
       }
-      res.status(201).json({
-        message: 'School and admin created successfully',
-        school: {
-          id: school._id,
-          schoolId: school.schoolId,
-          name: school.name
-        },
-        user: {
-          userId: user.userId,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          role: user.role
-        }
-      });
     });
   } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({ 
-        message: 'School ID or email already exists' 
-      });
-    }
+    console.error('Register school error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

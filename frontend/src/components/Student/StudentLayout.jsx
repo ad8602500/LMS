@@ -1,18 +1,19 @@
 import React from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
-import './AdminLayout.css'; // We will create this CSS file next
+import './StudentLayout.css';
 
-const AdminLayout = () => {
+const StudentLayout = () => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
   // Dummy user data for demonstration, replace with actual user data from context/state
   const user = JSON.parse(localStorage.getItem('user')) || {
-    firstName: 'Admin',
-    lastName: 'User',
-    userId: 'ADMIN_001',
-    branch: 'School Administration',
+    firstName: 'Aditya',
+    lastName: 'Dangi',
+    userId: '12106635',
+    section: 'K21DY',
+    branch: 'B.Tech. (Computer Science and Engineering)',
     profilePic: '/vite.svg' // Using local vite.svg for testing
   };
 
@@ -24,10 +25,10 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="admin-layout">
-      <aside className="admin-sidebar">
+    <div className="student-layout">
+      <aside className="student-sidebar">
         <div className="sidebar-logo">
-          <Link to="/admin/dashboard">
+          <Link to="/student/dashboard">
             <img src="/vite.svg" alt="UMS Logo" className="ums-logo" />
             <div className="logo-text">
               <span className="ums-abbr">UMS</span>
@@ -35,30 +36,26 @@ const AdminLayout = () => {
             </div>
           </Link>
         </div>
-        <nav className="admin-nav-links">
-          <Link to="/admin/dashboard" className="nav-item">
+        <nav className="student-nav-links">
+          <Link to="/student/dashboard" className="nav-item">
             <i className="fas fa-tachometer-alt"></i>Dashboard
           </Link>
-          <Link to="/admin/teachers" className="nav-item">
-            <i className="fas fa-chalkboard-teacher"></i>Teachers
+          <Link to="/student/ums-home" className="nav-item">
+            <i className="fas fa-home"></i>UMS Home
           </Link>
-          <Link to="/admin/students" className="nav-item">
-            <i className="fas fa-user-graduate"></i>Students
+          <Link to="/student/lpu-touch" className="nav-item">
+            <i className="fas fa-mobile-alt"></i>LPU Touch
           </Link>
-          <Link to="/admin/classes" className="nav-item">
-            <i className="fas fa-school"></i>Classes
+          <Link to="/student/my-class" className="nav-item">
+            <i className="fas fa-chalkboard"></i>My Class
           </Link>
-          <Link to="/admin/attendance" className="nav-item">
-            <i className="fas fa-clipboard-check"></i>Attendance
+          <Link to="/student/your-dost" className="nav-item">
+            <i className="fas fa-users"></i>YourDost
           </Link>
-          <Link to="/admin/fees" className="nav-item">
-            <i className="fas fa-money-bill-wave"></i>Fees
-          </Link>
-          {/* Add more admin specific links here */}
         </nav>
       </aside>
-      <main className="admin-main-content">
-        <header className="admin-main-header">
+      <main className="student-main-content">
+        <header className="student-main-header">
           <div className="header-left">
             {/* Expand/Collapse sidebar button if needed */}
           </div>
@@ -66,7 +63,7 @@ const AdminLayout = () => {
             <div className="profile-section">
               <div className="profile-details">
                 <p className="user-name">{user.firstName} {user.lastName}</p>
-                <p className="user-info">ID: {user.userId}</p>
+                <p className="user-info">VID: {user.userId} | Section: {user.section}</p>
                 <p className="user-info">{user.branch}</p>
               </div>
               <img src={user.profilePic} alt="Profile" className="profile-pic" />
@@ -74,7 +71,7 @@ const AdminLayout = () => {
             </div>
           </div>
         </header>
-        <div className="admin-content-area">
+        <div className="student-content-area">
           <Outlet />
         </div>
       </main>
@@ -82,4 +79,4 @@ const AdminLayout = () => {
   );
 };
 
-export default AdminLayout; 
+export default StudentLayout; 

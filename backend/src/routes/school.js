@@ -2,8 +2,6 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import School from '../models/School.js';
 import User from '../models/User.js';
-import Teacher from '../models/Teacher.js';
-import Student from '../models/Student.js';
 import Class from '../models/Class.js';
 import { auth, checkRole, checkSchoolAccess } from '../middleware/auth.js';
 
@@ -109,8 +107,8 @@ router.get('/stats', auth, checkRole('ADMIN'), async (req, res) => {
   try {
     const schoolId = req.user.schoolId;
     
-    const totalTeachers = await Teacher.countDocuments({ schoolId });
-    const totalStudents = await Student.countDocuments({ schoolId });
+    const totalTeachers = await User.countDocuments({ schoolId, role: 'TEACHER' });
+    const totalStudents = await User.countDocuments({ schoolId, role: 'STUDENT' });
     const totalClasses = await Class.countDocuments({ schoolId });
 
     res.status(200).json({

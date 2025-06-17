@@ -17,7 +17,7 @@ const Login = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value.trim()
     }));
     setError('');
   };
@@ -26,21 +26,41 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    // Validate form data
+    if (loginType === 'school' && !formData.schoolId.trim()) {
+      setError('School ID is required');
+      setLoading(false);
+      return;
+    }
+    if (!formData.userId.trim()) {
+      setError('User ID or Email is required');
+      setLoading(false);
+      return;
+    }
+    if (!formData.password) {
+      setError('Password is required');
+      setLoading(false);
+      return;
+    }
+
     try {
       let loginData;
       if (loginType === 'super') {
         loginData = {
-          userId: formData.userId,
-          password: formData.password,
-          role: 'SUPER_ADMIN'
+          userId: formData.userId.trim(),
+          password: formData.password
         };
       } else {
         loginData = {
-          schoolId: formData.schoolId,
-          userId: formData.userId,
+          schoolId: formData.schoolId.trim(),
+          userId: formData.userId.trim(),
           password: formData.password
         };
       }
+
+      console.log('Attempting login with:', { ...loginData, password: '***' });
+
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: {
@@ -48,7 +68,9 @@ const Login = () => {
         },
         body: JSON.stringify(loginData),
       });
+
       const data = await response.json();
+      
       if (response.ok) {
         const userData = {
           ...data.user,
@@ -56,23 +78,35 @@ const Login = () => {
         };
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(userData));
+        
         // Redirect based on role
         const role = userData.role?.toLowerCase();
-        if (role === 'admin') {
-          navigate('/admin/dashboard');
-        } else if (role === 'teacher') {
-          navigate('/teacher/dashboard');
-        } else if (role === 'student') {
-          navigate('/student/dashboard');
-        } else if (role === 'super_admin') {
-          navigate('/super-admin/dashboard');
-        } else {
-          setError('Unknown user role.');
+        console.log('Login successful, redirecting to:', role);
+        
+        switch (role) {
+          case 'admin':
+            navigate('/admin/dashboard');
+            break;
+          case 'teacher':
+            navigate('/teacher/dashboard');
+            break;
+          case 'student':
+            navigate('/student/dashboard');
+            break;
+          case 'super_admin':
+            navigate('/super-admin/dashboard');
+            break;
+          default:
+            setError('Unknown user role.');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
         }
       } else {
-        setError(data.message || 'Login failed. Please check your credentials.');
+        console.error('Login failed:', data);
+        setError(data.details || data.message || 'Login failed. Please check your credentials.');
       }
     } catch (error) {
+      console.error('Login error:', error);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -87,7 +121,11 @@ const Login = () => {
           <button
             type="button"
             className={loginType === 'super' ? 'active' : ''}
-            onClick={() => setLoginType('super')}
+            onClick={() => {
+              setLoginType('super');
+              setFormData(prev => ({ ...prev, schoolId: '' }));
+              setError('');
+            }}
             style={{ flex: 1, padding: 8, background: loginType === 'super' ? '#1976d2' : '#eee', color: loginType === 'super' ? '#fff' : '#333', border: 'none', borderRadius: '4px 0 0 4px' }}
           >
             Super Admin
@@ -95,7 +133,10 @@ const Login = () => {
           <button
             type="button"
             className={loginType === 'school' ? 'active' : ''}
-            onClick={() => setLoginType('school')}
+            onClick={() => {
+              setLoginType('school');
+              setError('');
+            }}
             style={{ flex: 1, padding: 8, background: loginType === 'school' ? '#1976d2' : '#eee', color: loginType === 'school' ? '#fff' : '#333', border: 'none', borderRadius: '0 4px 4px 0' }}
           >
             School User

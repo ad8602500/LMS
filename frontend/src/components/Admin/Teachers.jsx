@@ -8,6 +8,8 @@ const Teachers = () => {
   const [error, setError] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [newTeacherCredentials, setNewTeacherCredentials] = useState(null);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -54,13 +56,20 @@ const Teachers = () => {
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        body: formData // FormData is already properly formatted from AddUserForm
+        body: formData
       });
       
       const data = await response.json();
       if (response.ok) {
-        setTeachers(prevTeachers => [...prevTeachers, data]);
+        setTeachers(prevTeachers => [...prevTeachers, data.teacher]);
         setShowAddModal(false);
+        // Store credentials and show credentials modal
+        setNewTeacherCredentials({
+          email: data.teacher.email,
+          userId: data.credentials.userId,
+          password: data.credentials.password
+        });
+        setShowCredentialsModal(true);
         // Refresh the teachers list to ensure we have the latest data
         fetchTeachers();
       } else {
@@ -68,7 +77,7 @@ const Teachers = () => {
       }
     } catch (error) {
       setError(error.message || 'Failed to add teacher. Please try again later.');
-      throw error; // Re-throw to let AddUserForm handle the error
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -274,6 +283,57 @@ const Teachers = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Credentials Modal */}
+      {showCredentialsModal && newTeacherCredentials && (
+        <div className="modal-overlay">
+          <div className="modal-content credentials-modal">
+            <div className="modal-header">
+              <h2>Teacher Account Created Successfully</h2>
+              <button className="modal-close" onClick={() => setShowCredentialsModal(false)}>&times;</button>
+            </div>
+            <div className="credentials-content">
+              <p>Please save these credentials. They have also been sent to the teacher's email.</p>
+              <div className="credentials-details">
+                <div className="credential-item">
+                  <strong>Email:</strong>
+                  <span>{newTeacherCredentials.email}</span>
+                </div>
+                <div className="credential-item">
+                  <strong>User ID:</strong>
+                  <span>{newTeacherCredentials.userId}</span>
+                </div>
+                <div className="credential-item">
+                  <strong>Password:</strong>
+                  <span>{newTeacherCredentials.password}</span>
+                </div>
+              </div>
+              <div className="credentials-warning">
+                <p>⚠️ Please make sure to save these credentials. They cannot be retrieved later.</p>
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="add-button"
+                onClick={() => {
+                  // Copy credentials to clipboard
+                  const text = `Email: ${newTeacherCredentials.email}\nUser ID: ${newTeacherCredentials.userId}\nPassword: ${newTeacherCredentials.password}`;
+                  navigator.clipboard.writeText(text);
+                  alert('Credentials copied to clipboard!');
+                }}
+              >
+                Copy Credentials
+              </button>
+              <button 
+                className="edit-button"
+                onClick={() => setShowCredentialsModal(false)}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

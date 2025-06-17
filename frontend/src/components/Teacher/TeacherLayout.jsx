@@ -1,18 +1,19 @@
 import React from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
-import './AdminLayout.css'; // We will create this CSS file next
+import './TeacherLayout.css';
 
-const AdminLayout = () => {
+const TeacherLayout = () => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
   // Dummy user data for demonstration, replace with actual user data from context/state
   const user = JSON.parse(localStorage.getItem('user')) || {
-    firstName: 'Admin',
-    lastName: 'User',
-    userId: 'ADMIN_001',
-    branch: 'School Administration',
+    firstName: 'John',
+    lastName: 'Doe',
+    userId: 'TEACHER_001',
+    section: 'N/A',
+    branch: 'Mathematics Dept.',
     profilePic: '/vite.svg' // Using local vite.svg for testing
   };
 
@@ -24,10 +25,10 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="admin-layout">
-      <aside className="admin-sidebar">
+    <div className="teacher-layout">
+      <aside className="teacher-sidebar">
         <div className="sidebar-logo">
-          <Link to="/admin/dashboard">
+          <Link to="/teacher/dashboard">
             <img src="/vite.svg" alt="UMS Logo" className="ums-logo" />
             <div className="logo-text">
               <span className="ums-abbr">UMS</span>
@@ -35,30 +36,38 @@ const AdminLayout = () => {
             </div>
           </Link>
         </div>
-        <nav className="admin-nav-links">
-          <Link to="/admin/dashboard" className="nav-item">
+        <nav className="teacher-nav-links">
+          <Link to="/teacher/dashboard" className="nav-item">
             <i className="fas fa-tachometer-alt"></i>Dashboard
           </Link>
-          <Link to="/admin/teachers" className="nav-item">
-            <i className="fas fa-chalkboard-teacher"></i>Teachers
+          <Link to="/teacher/courses" className="nav-item">
+            <i className="fas fa-book"></i>Courses
           </Link>
-          <Link to="/admin/students" className="nav-item">
+          <Link to="/teacher/assignments" className="nav-item">
+            <i className="fas fa-tasks"></i>Assignments
+          </Link>
+          <Link to="/teacher/schedule" className="nav-item">
+            <i className="fas fa-calendar-alt"></i>Schedule
+          </Link>
+          <Link to="/teacher/students" className="nav-item">
             <i className="fas fa-user-graduate"></i>Students
           </Link>
-          <Link to="/admin/classes" className="nav-item">
-            <i className="fas fa-school"></i>Classes
-          </Link>
-          <Link to="/admin/attendance" className="nav-item">
+          <Link to="/teacher/attendance" className="nav-item">
             <i className="fas fa-clipboard-check"></i>Attendance
           </Link>
-          <Link to="/admin/fees" className="nav-item">
-            <i className="fas fa-money-bill-wave"></i>Fees
+          <Link to="/teacher/communication" className="nav-item">
+            <i className="fas fa-comments"></i>Communication
           </Link>
-          {/* Add more admin specific links here */}
+          <Link to="/teacher/reports" className="nav-item">
+            <i className="fas fa-chart-line"></i>Reports
+          </Link>
+          <Link to="/teacher/profile" className="nav-item">
+            <i className="fas fa-user-circle"></i>Profile
+          </Link>
         </nav>
       </aside>
-      <main className="admin-main-content">
-        <header className="admin-main-header">
+      <main className="teacher-main-content">
+        <header className="teacher-main-header">
           <div className="header-left">
             {/* Expand/Collapse sidebar button if needed */}
           </div>
@@ -74,7 +83,7 @@ const AdminLayout = () => {
             </div>
           </div>
         </header>
-        <div className="admin-content-area">
+        <div className="teacher-content-area">
           <Outlet />
         </div>
       </main>
@@ -82,4 +91,4 @@ const AdminLayout = () => {
   );
 };
 
-export default AdminLayout; 
+export default TeacherLayout; 

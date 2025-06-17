@@ -1,9 +1,12 @@
-/* No longer needed as Material-UI handles layout and card styling */
-
-.admin-dashboard {
+.teacher-dashboard {
   padding: 20px;
   background-color: #f4f7f6;
   min-height: calc(100vh - 60px); /* Adjust based on your header/footer height */
+}
+
+.teacher-dashboard h2 {
+  color: #333;
+  margin-bottom: 20px;
 }
 
 .dashboard-content {
@@ -76,12 +79,72 @@
   background-color: #0056b3;
 }
 
-.dashboard-link {
-  color: #007bff;
-  text-decoration: none;
-  font-weight: 500;
+.dashboard-sections {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
 }
 
-.dashboard-link:hover {
-  text-decoration: underline;
+@media (min-width: 768px) {
+  .dashboard-sections {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.upcoming-classes, .notifications {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.upcoming-classes h3, .notifications h3 {
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.upcoming-classes ul,
+.notifications ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.upcoming-classes li,
+.notifications li {
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  color: #555;
+}
+
+.upcoming-classes li:last-child,
+.notifications li:last-child {
+  border-bottom: none;
+}
+
+.notifications li.info {
+  color: #2196f3; /* Blue */
+}
+
+.notifications li.warning {
+  color: #ff9800; /* Orange */
+}
+
+.notifications li.error {
+  color: #f44336; /* Red */
+}
+
+.loading, .error-message {
+  text-align: center;
+  padding: 20px;
+  font-size: 1.2em;
+  color: #555;
+}
+
+.error-message {
+  color: #f44336;
+  font-weight: bold;
 } 

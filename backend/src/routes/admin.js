@@ -1,7 +1,6 @@
 import express from 'express';
 import { auth, checkRole } from '../middleware/auth.js';
-import Teacher from '../models/Teacher.js';
-import Student from '../models/Student.js';
+import User from '../models/User.js';
 import Class from '../models/Class.js';
 import Attendance from '../models/Attendance.js';
 import Fee from '../models/Fee.js';
@@ -14,10 +13,10 @@ router.get('/stats', auth, checkRole(['ADMIN']), async (req, res) => {
     const schoolId = req.user.schoolId;
 
     // Get total teachers
-    const totalTeachers = await Teacher.countDocuments({ schoolId });
+    const totalTeachers = await User.countDocuments({ schoolId, role: 'TEACHER' });
 
     // Get total students
-    const totalStudents = await Student.countDocuments({ schoolId });
+    const totalStudents = await User.countDocuments({ schoolId, role: 'STUDENT' });
 
     // Get total classes
     const totalClasses = await Class.countDocuments({ schoolId });

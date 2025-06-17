@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import './Dashboard.css';
 import Teachers from './Teachers';
 import Students from './Students';
 import Classes from './Classes';
 import Timetable from './Timetable';
+import Attendance from './Attendance';
+import Fees from './Fees';
 import axios from 'axios';
 import {
   Box,
@@ -12,6 +14,7 @@ import {
   CardContent,
   Grid,
   Typography,
+  IconButton
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -19,12 +22,12 @@ import {
   Class as ClassIcon,
   EventNote as EventNoteIcon,
   Payment as PaymentIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState({
     totalTeachers: 0,
     totalStudents: 0,
@@ -33,7 +36,6 @@ const AdminDashboard = () => {
     totalFees: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
@@ -41,6 +43,7 @@ const AdminDashboard = () => {
   }, []);
 
   const fetchStats = async () => {
+    setLoading(true); // Set loading to true when fetching starts
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -48,7 +51,7 @@ const AdminDashboard = () => {
         return;
       }
 
-      const response = await axios.get('/api/admin/stats', {
+      const response = await axios.get('http://localhost:5000/api/admin/stats', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -61,256 +64,137 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
-
-  const user = JSON.parse(localStorage.getItem('user'));
-  if (!user) {
-    // redirect to login
-  }
-  if (user.role !== 'ADMIN') {
-    // redirect to their dashboard
-  }
-
   const statCards = [
     {
       title: 'Total Teachers',
       value: stats.totalTeachers,
       icon: <PeopleIcon sx={{ fontSize: 40 }} />,
-      color: '#1976d2',
+      color: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
     },
     {
       title: 'Total Students',
       value: stats.totalStudents,
       icon: <SchoolIcon sx={{ fontSize: 40 }} />,
-      color: '#2e7d32',
+      color: 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)',
     },
     {
       title: 'Total Classes',
       value: stats.totalClasses,
       icon: <ClassIcon sx={{ fontSize: 40 }} />,
-      color: '#ed6c02',
+      color: 'linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%)',
     },
     {
       title: 'Today\'s Attendance',
       value: stats.totalAttendance,
       icon: <EventNoteIcon sx={{ fontSize: 40 }} />,
-      color: '#9c27b0',
+      color: 'linear-gradient(135deg, #8360c3 0%, #2ebf91 100%)',
     },
     {
       title: 'Pending Fees',
       value: `₹${stats.totalFees}`,
       icon: <PaymentIcon sx={{ fontSize: 40 }} />,
-      color: '#d32f2f',
+      color: 'linear-gradient(135deg, #fc466b 0%, #3f5efb 100%)',
     },
   ];
 
   if (loading) {
     return (
-      <div className="loading">
-        <div>Loading dashboard data...</div>
-      </div>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <Typography variant="h5">Loading dashboard data...</Typography>
+      </Box>
     );
   }
 
   return (
     <div className="admin-dashboard">
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="logo">School Admin</div>
-        <nav>
-          <button 
-            className={activeTab === 'overview' ? 'active' : ''} 
-            onClick={() => setActiveTab('overview')}
-          >
-            📊 Overview
-          </button>
-          <button 
-            className={activeTab === 'teachers' ? 'active' : ''} 
-            onClick={() => setActiveTab('teachers')}
-          >
-            👨‍🏫 Teachers
-          </button>
-          <button 
-            className={activeTab === 'students' ? 'active' : ''} 
-            onClick={() => setActiveTab('students')}
-          >
-            👨‍🎓 Students
-          </button>
-          <button 
-            className={activeTab === 'classes' ? 'active' : ''} 
-            onClick={() => setActiveTab('classes')}
-          >
-            📚 Classes
-          </button>
-          <button 
-            className={activeTab === 'timetable' ? 'active' : ''} 
-            onClick={() => setActiveTab('timetable')}
-          >
-            ⏰ Timetable
-          </button>
-          <button 
-            className={activeTab === 'fees' ? 'active' : ''} 
-            onClick={() => setActiveTab('fees')}
-          >
-            💰 Fees
-          </button>
-          <button 
-            className={activeTab === 'attendance' ? 'active' : ''} 
-            onClick={() => setActiveTab('attendance')}
-          >
-            📝 Attendance
-          </button>
-          <button 
-            className={activeTab === 'exams' ? 'active' : ''} 
-            onClick={() => setActiveTab('exams')}
-          >
-            📝 Exams
-          </button>
-          <button 
-            className={activeTab === 'reports' ? 'active' : ''} 
-            onClick={() => setActiveTab('reports')}
-          >
-            📈 Reports
-          </button>
-          <button 
-            className={activeTab === 'settings' ? 'active' : ''} 
-            onClick={() => setActiveTab('settings')}
-          >
-            ⚙️ Settings
-          </button>
-        </nav>
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="logout-button">
-            Logout
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="dashboard-main">
-        {/* Header */}
-        <div className="dashboard-header">
-          <h1>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
-          <div className="header-actions">
-            <button className="refresh-button" onClick={fetchStats}>
-              🔄 Refresh
-            </button>
+      <div className="dashboard-content">
+        {/* Overall Statistics Card */}
+        <div className="dashboard-card statistics-card">
+          <h2 className="card-title"><i className="fas fa-chart-bar"></i> Overall Statistics</h2>
+          <div className="card-body">
+            <ul>
+              <li>Total Schools: <strong>5</strong></li>
+              <li>Total Admins: <strong>15</strong></li>
+              <li>Total Teachers: <strong>200</strong></li>
+              <li>Total Students: <strong>5000</strong></li>
+            </ul>
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="dashboard-content">
-          {activeTab === 'overview' && (
-            <div className="overview-section">
-              <div className="stats-grid">
-                {statCards.map((card) => (
-                  <div key={card.title} className="stat-card">
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        mb: 2,
-                      }}
-                    >
-                      <Typography variant="h6" component="div">
-                        {card.title}
-                      </Typography>
-                      <Box sx={{ color: card.color }}>{card.icon}</Box>
-                    </Box>
-                    <Typography variant="h4" component="div" sx={{ color: card.color }}>
-                      {card.value}
-                    </Typography>
-                  </div>
-                ))}
-              </div>
-
-              <div className="recent-activity">
-                <h2>Recent Activity</h2>
-                <div className="activity-list">
-                  {stats?.recentActivity?.map((activity, index) => (
-                    <div key={index} className="activity-item">
-                      <span className="activity-time">{activity.time}</span>
-                      <span className="activity-text">{activity.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+        {/* Recent Registrations Card */}
+        <div className="dashboard-card registrations-card">
+          <h2 className="card-title"><i className="fas fa-user-plus"></i> Recent Registrations</h2>
+          <div className="card-body">
+            <ul>
+              <li>New School: Green Valley High (ID: GVH001) - 2024-07-10</li>
+              <li>New Teacher: Ms. Alice Smith (ID: TCH045) - 2024-07-09</li>
+              <li>New Student: Bob Johnson (ID: STU5001) - 2024-07-09</li>
+            </ul>
+            <div className="card-footer">
+              <button className="view-more-button">View All Registrations</button>
             </div>
-          )}
-
-          {activeTab === 'teachers' && <Teachers />}
-
-          {activeTab === 'students' && <Students />}
-
-          {activeTab === 'classes' && <Classes />}
-
-          {activeTab === 'timetable' && <Timetable />}
-
-          {activeTab === 'fees' && (
-            <div className="fees-section">
-              <div className="section-header">
-                <h2>Fee Management</h2>
-                <button className="add-button">+ Add Fee Record</button>
-              </div>
-              <div className="fees-list">
-                {/* Fees list will be implemented here */}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'attendance' && (
-            <div className="attendance-section">
-              <div className="section-header">
-                <h2>Attendance</h2>
-                <button className="add-button">+ Mark Attendance</button>
-              </div>
-              <div className="attendance-list">
-                {/* Attendance list will be implemented here */}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'exams' && (
-            <div className="exams-section">
-              <div className="section-header">
-                <h2>Exams</h2>
-                <button className="add-button">+ Schedule Exam</button>
-              </div>
-              <div className="exams-list">
-                {/* Exams list will be implemented here */}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'reports' && (
-            <div className="reports-section">
-              <div className="section-header">
-                <h2>Reports</h2>
-                <button className="add-button">+ Generate Report</button>
-              </div>
-              <div className="reports-list">
-                {/* Reports list will be implemented here */}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'settings' && (
-            <div className="settings-section">
-              <div className="section-header">
-                <h2>Settings</h2>
-              </div>
-              <div className="settings-form">
-                {/* Settings form will be implemented here */}
-              </div>
-            </div>
-          )}
+          </div>
         </div>
-      </main>
+
+        {/* School Management Quick Links Card */}
+        <div className="dashboard-card quick-links-card">
+          <h2 className="card-title"><i className="fas fa-link"></i> School Management</h2>
+          <div className="card-body">
+            <ul>
+              <li><Link to="/admin/schools" className="dashboard-link">Manage Schools</Link></li>
+              <li><Link to="/admin/users" className="dashboard-link">Manage Users</Link></li>
+              <li><Link to="/admin/classes" className="dashboard-link">Manage Classes</Link></li>
+            </ul>
+          </div>
+        </div>
+
+        {/* System Health / Alerts Card */}
+        <div className="dashboard-card alerts-card">
+          <h2 className="card-title"><i className="fas fa-exclamation-triangle"></i> System Alerts</h2>
+          <div className="card-body">
+            <p>No critical alerts at this time.</p>
+            <ul>
+              <li>Database backup completed successfully.</li>
+              <li>Server uptime: 99.9%</li>
+            </ul>
+            <div className="card-footer">
+              <button className="view-more-button">View System Logs</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Reports & Analytics Card */}
+        <div className="dashboard-card reports-card">
+          <h2 className="card-title"><i className="fas fa-chart-pie"></i> Reports & Analytics</h2>
+          <div className="card-body">
+            <ul>
+              <li><Link to="/admin/reports/enrollment" className="dashboard-link">Enrollment Reports</Link></li>
+              <li><Link to="/admin/reports/attendance" className="dashboard-link">Attendance Reports</Link></li>
+              <li><Link to="/admin/reports/financial" className="dashboard-link">Financial Reports</Link></li>
+            </ul>
+            <div className="card-footer">
+              <button className="view-more-button">Generate New Report</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Attendance Management Card - NEW */}
+        <div className="dashboard-card attendance-management-card">
+          <h2 className="card-title"><i className="fas fa-user-check"></i> Attendance Management</h2>
+          <div className="card-body">
+            <p>Manage and view attendance records for students and teachers.</p>
+            <ul>
+              <li><Link to="/admin/attendance" className="dashboard-link">View Student Attendance</Link></li>
+              <li><Link to="/admin/attendance" className="dashboard-link">View Teacher Attendance</Link></li>
+              <li><Link to="/admin/attendance" className="dashboard-link">Generate Attendance Reports</Link></li>
+            </ul>
+          </div>
+          <div className="card-footer">
+            <button className="view-more-button">Go to Attendance</button>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 };

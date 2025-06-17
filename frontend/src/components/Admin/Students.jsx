@@ -12,17 +12,23 @@ const Students = () => {
   const [error, setError] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [newStudentCredentials, setNewStudentCredentials] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [selectedClass, setSelectedClass] = useState('');
-  const [selectedSection, setSelectedSection] = useState('');
+  const [selectedClassFilter, setSelectedClassFilter] = useState('');
+  const [selectedSectionFilter, setSelectedSectionFilter] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    grade: '',
-    rollNumber: '',
-    admissionDate: ''
+    classId: '',
+    section: '',
+    rollNo: '',
+    admissionNo: '',
+    parentName: '',
+    parentPhone: '',
+    image: null
   });
   const { enqueueSnackbar } = useSnackbar();
 
@@ -46,6 +52,7 @@ const Students = () => {
       }
     } catch (error) {
       console.error('Failed to fetch classes:', error);
+      enqueueSnackbar('Failed to load classes.', { variant: 'error' });
     }
   };
 
@@ -67,6 +74,7 @@ const Students = () => {
   };
 
   const fetchStudents = async () => {
+    setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/admin/students', {
@@ -79,62 +87,70 @@ const Students = () => {
         setStudents(data);
       } else {
         setError(data.message || 'Failed to fetch students');
+        enqueueSnackbar(data.message || 'Failed to fetch students', { variant: 'error' });
       }
     } catch (error) {
       setError('Failed to fetch students. Please try again later.');
+      enqueueSnackbar('Failed to fetch students. Please try again later.', { variant: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddStudent = async (formData) => {
+  const handleAddStudent = async (formDataToSend) => {
     try {
-      const user = JSON.parse(localStorage.getItem('user'));
-      if (!user || !user.schoolId) {
-        enqueueSnackbar('School ID not found. Please log in again.', { variant: 'error' });
-        return;
-      }
-
-      const response = await axios.post('http://localhost:5000/api/admin/students', {
-        ...formData,
-        schoolId: user.schoolId
-      });
+      const token = localStorage.getItem('token');
+      const response = await axios.post('http://localhost:5000/api/admin/students', 
+        formDataToSend,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
 
       if (response.data) {
         enqueueSnackbar('Student added successfully', { variant: 'success' });
         fetchStudents();
         setShowAddModal(false);
+        setNewStudentCredentials({
+          email: response.data.student.email,
+          userId: response.data.credentials.userId,
+          password: response.data.credentials.password
+        });
+        setShowCredentialsModal(true);
       }
     } catch (error) {
       console.error('Error adding student:', error);
       enqueueSnackbar(error.response?.data?.message || 'Error adding student', { variant: 'error' });
+      throw error;
     }
   };
 
-  const handleEditStudent = async (e) => {
-    e.preventDefault();
+  const handleEditStudent = async (formDataToSend) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/admin/students/${selectedStudent._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setStudents(students.map(student => 
-          student._id === selectedStudent._id ? data : student
-        ));
+      const response = await axios.put(`http://localhost:5000/api/admin/students/${selectedStudent._id}`, 
+        formDataToSend,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      
+      if (response.data) {
+        enqueueSnackbar('Student updated successfully', { variant: 'success' });
+        fetchStudents();
         setShowEditModal(false);
         setSelectedStudent(null);
-      } else {
-        setError(data.message || 'Failed to update student');
       }
     } catch (error) {
-      setError('Failed to update student. Please try again later.');
+      console.error('Error updating student:', error);
+      enqueueSnackbar(error.response?.data?.message || 'Failed to update student', { variant: 'error' });
+      throw error;
     }
   };
 
@@ -144,26 +160,31 @@ const Students = () => {
     }
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/admin/students/${studentId}`, {
-        method: 'DELETE',
+      const response = await axios.delete(`http://localhost:5000/api/admin/students/${studentId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      if (response.ok) {
+      if (response.status === 200) {
+        enqueueSnackbar('Student deleted successfully', { variant: 'success' });
         setStudents(students.filter(student => student._id !== studentId));
       } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to delete student');
+        const data = response.data;
+        enqueueSnackbar(data.message || 'Failed to delete student', { variant: 'error' });
       }
     } catch (error) {
-      setError('Failed to delete student. Please try again later.');
+      console.error('Error deleting student:', error);
+      enqueueSnackbar('Failed to delete student. Please try again later.', { variant: 'error' });
     }
   };
 
   const filteredStudents = students.filter(student => {
-    if (selectedClass && student.class !== selectedClass) return false;
-    if (selectedSection && student.section !== selectedSection) return false;
+    const studentClass = classes.find(cls => cls._id === student.classId);
+    const studentClassName = studentClass ? studentClass.name : '';
+    const studentSectionName = studentClass ? studentClass.section : '';
+
+    if (selectedClassFilter && studentClassName !== selectedClassFilter) return false;
+    if (selectedSectionFilter && studentSectionName !== selectedSectionFilter) return false;
     return true;
   });
 
@@ -186,8 +207,8 @@ const Students = () => {
         <div className="filter-group">
           <label>Class:</label>
           <select 
-            value={selectedClass} 
-            onChange={(e) => setSelectedClass(e.target.value)}
+            value={selectedClassFilter} 
+            onChange={(e) => setSelectedClassFilter(e.target.value)}
           >
             <option value="">All Classes</option>
             {classes.map(cls => (
@@ -198,12 +219,12 @@ const Students = () => {
         <div className="filter-group">
           <label>Section:</label>
           <select 
-            value={selectedSection} 
-            onChange={(e) => setSelectedSection(e.target.value)}
+            value={selectedSectionFilter} 
+            onChange={(e) => setSelectedSectionFilter(e.target.value)}
           >
             <option value="">All Sections</option>
-            {sections.map(section => (
-              <option key={section._id} value={section.name}>{section.name}</option>
+            {Array.from(new Set(classes.map(cls => cls.section))).map(section => (
+              <option key={section} value={section}>{section}</option>
             ))}
           </select>
         </div>
@@ -219,6 +240,9 @@ const Students = () => {
               <th>Class</th>
               <th>Section</th>
               <th>Roll Number</th>
+              <th>Admission Number</th>
+              <th>Parent Name</th>
+              <th>Parent Phone</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -228,15 +252,30 @@ const Students = () => {
                 <td>{`${student.firstName} ${student.lastName}`}</td>
                 <td>{student.email}</td>
                 <td>{student.phone}</td>
-                <td>{student.class}</td>
+                <td>{classes.find(cls => cls._id === student.classId)?.name || 'N/A'}</td>
                 <td>{student.section}</td>
                 <td>{student.rollNo}</td>
+                <td>{student.admissionNo}</td>
+                <td>{student.parentName}</td>
+                <td>{student.parentPhone}</td>
                 <td>
                   <button
                     className="action-button edit-button"
                     onClick={() => {
                       setSelectedStudent(student);
-                      setFormData(student);
+                      setFormData({
+                        firstName: student.firstName,
+                        lastName: student.lastName,
+                        email: student.email,
+                        phone: student.phone,
+                        classId: student.classId || '',
+                        section: student.section || '',
+                        rollNo: student.rollNo || '',
+                        admissionNo: student.admissionNo || '',
+                        parentName: student.parentName || '',
+                        parentPhone: student.parentPhone || '',
+                        image: null
+                      });
                       setShowEditModal(true);
                     }}
                   >
@@ -261,9 +300,9 @@ const Students = () => {
         onSubmit={handleAddStudent}
         loading={loading}
         userType="student"
+        classes={classes}
       />
 
-      {/* Edit Student Modal */}
       {showEditModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -271,163 +310,118 @@ const Students = () => {
               <h2>Edit Student</h2>
               <button className="modal-close" onClick={() => setShowEditModal(false)}>&times;</button>
             </div>
-            <form onSubmit={handleEditStudent}>
-              {/* Same form fields as Add Student Modal */}
-              <div className="form-row">
-                <div className="form-group">
-                  <label>First Name</label>
-                  <input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Last Name</label>
-                  <input
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Phone</label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Class</label>
-                  <select
-                    value={formData.class}
-                    onChange={(e) => setFormData({...formData, class: e.target.value})}
-                    required
-                  >
-                    <option value="">Select Class</option>
-                    {classes.map(cls => (
-                      <option key={cls._id} value={cls.name}>{cls.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Section</label>
-                  <select
-                    value={formData.section}
-                    onChange={(e) => setFormData({...formData, section: e.target.value})}
-                    required
-                  >
-                    <option value="">Select Section</option>
-                    {sections.map(section => (
-                      <option key={section._id} value={section.name}>{section.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Roll Number</label>
-                  <input
-                    type="text"
-                    value={formData.rollNumber}
-                    onChange={(e) => setFormData({...formData, rollNumber: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Admission Number</label>
-                  <input
-                    type="text"
-                    value={formData.admissionNumber}
-                    onChange={(e) => setFormData({...formData, admissionNumber: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Date of Birth</label>
-                  <input
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => setFormData({...formData, dateOfBirth: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Gender</label>
-                  <select
-                    value={formData.gender}
-                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                    required
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-              </div>
-
+            <form onSubmit={() => handleEditStudent(formData)}>
               <div className="form-group">
-                <label>Address</label>
-                <textarea
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                <label>First Name</label>
+                <input
+                  type="text"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Last Name</label>
+                <input
+                  type="text"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Phone</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
                   required
                 />
               </div>
 
-              <h3>Parent Information</h3>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Parent Name</label>
-                  <input
-                    type="text"
-                    value={formData.parentName}
-                    onChange={(e) => setFormData({...formData, parentName: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Parent Phone</label>
-                  <input
-                    type="tel"
-                    value={formData.parentPhone}
-                    onChange={(e) => setFormData({...formData, parentPhone: e.target.value})}
-                    required
-                  />
-                </div>
+              <div className="form-group">
+                <label htmlFor="classId">Class</label>
+                <select
+                  id="classId"
+                  name="classId"
+                  value={formData.classId}
+                  onChange={(e) => setFormData({...formData, classId: e.target.value})}
+                  required
+                >
+                  <option value="">Select Class</option>
+                  {classes.map(cls => (
+                    <option key={cls._id} value={cls._id}>{cls.name} - {cls.section}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-group">
-                <label>Parent Email</label>
+                <label>Section</label>
                 <input
-                  type="email"
-                  value={formData.parentEmail}
-                  onChange={(e) => setFormData({...formData, parentEmail: e.target.value})}
+                  type="text"
+                  value={formData.section}
+                  onChange={(e) => setFormData({...formData, section: e.target.value})}
                   required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Roll Number</label>
+                <input
+                  type="text"
+                  value={formData.rollNo}
+                  onChange={(e) => setFormData({...formData, rollNo: e.target.value})}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Admission Number</label>
+                <input
+                  type="text"
+                  value={formData.admissionNo}
+                  onChange={(e) => setFormData({...formData, admissionNo: e.target.value})}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Parent Name</label>
+                <input
+                  type="text"
+                  value={formData.parentName}
+                  onChange={(e) => setFormData({...formData, parentName: e.target.value})}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Parent Phone</label>
+                <input
+                  type="tel"
+                  value={formData.parentPhone}
+                  onChange={(e) => setFormData({...formData, parentPhone: e.target.value})}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="image">Profile Image</label>
+                <input
+                  type="file"
+                  id="image"
+                  name="image"
+                  accept="image/*"
+                  onChange={(e) => setFormData({...formData, image: e.target.files[0]})}
                 />
               </div>
 
@@ -440,6 +434,37 @@ const Students = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showCredentialsModal && newStudentCredentials && (
+        <div className="modal-overlay">
+          <div className="modal-content credentials-modal">
+            <div className="modal-header">
+              <h2>Student Account Created Successfully</h2>
+              <button className="modal-close" onClick={() => setShowCredentialsModal(false)}>&times;</button>
+            </div>
+            <div className="credentials-content">
+              <p>Please save these credentials. You may wish to provide them to the student/parent.</p>
+              <div className="credentials-details">
+                <div className="credential-item">
+                  <strong>Email:</strong>
+                  <span>{newStudentCredentials.email}</span>
+                </div>
+                <div className="credential-item">
+                  <strong>User ID:</strong>
+                  <span>{newStudentCredentials.userId}</span>
+                </div>
+                <div className="credential-item">
+                  <strong>Password:</strong>
+                  <span>{newStudentCredentials.password}</span>
+                </div>
+              </div>
+              <div className="credentials-warning">
+                <p>⚠️ Please make sure to save these credentials. They cannot be retrieved later.</p>
+              </div>
+            </div>
           </div>
         </div>
       )}

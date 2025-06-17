@@ -28,25 +28,9 @@ const schoolSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  adminEmail: {
-    type: String,
-    required: true,
-    trim: true,
-    lowercase: true
-  },
-  adminPassword: {
-    type: String,
-    required: true
-  },
-  adminFirstName: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  adminLastName: {
-    type: String,
-    required: true,
-    trim: true
+  isActive: {
+    type: Boolean,
+    default: true
   },
   createdAt: {
     type: Date,

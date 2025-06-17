@@ -1,25 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './AddUserForm.css';
 
-const AddUserForm = ({ isOpen, onClose, onSubmit, userType }) => {
+const AddUserForm = ({ isOpen, onClose, onSubmit, userType, classes }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
+    // Teacher-specific
     subject: '',
     qualification: '',
     joiningDate: '',
-    class: '',
+    // Student-specific
+    classId: '',
     section: '',
     rollNo: '',
     admissionNo: '',
     parentName: '',
+    parentPhone: '',
     image: null
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Reset form data when modal opens or userType changes
+    if (isOpen) {
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        subject: '',
+        qualification: '',
+        joiningDate: '',
+        classId: '',
+        section: '',
+        rollNo: '',
+        admissionNo: '',
+        parentName: '',
+        parentPhone: '',
+        image: null
+      });
+      setErrors({});
+    }
+  }, [isOpen, userType]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -48,11 +74,12 @@ const AddUserForm = ({ isOpen, onClose, onSubmit, userType }) => {
 
     // Student-specific validations
     if (userType === 'student') {
-      if (!formData.class.trim()) newErrors.class = 'Class is required';
+      if (!formData.classId.trim()) newErrors.classId = 'Class is required';
       if (!formData.section.trim()) newErrors.section = 'Section is required';
       if (!formData.rollNo.trim()) newErrors.rollNo = 'Roll number is required';
       if (!formData.admissionNo.trim()) newErrors.admissionNo = 'Admission number is required';
       if (!formData.parentName.trim()) newErrors.parentName = 'Parent name is required';
+      if (!formData.parentPhone.trim()) newErrors.parentPhone = 'Parent phone is required';
     }
 
     setErrors(newErrors);
@@ -76,7 +103,7 @@ const AddUserForm = ({ isOpen, onClose, onSubmit, userType }) => {
       handleClose();
     } catch (error) {
       console.error('Error submitting form:', error);
-      setErrors({ submit: 'Failed to submit form. Please try again.' });
+      setErrors({ submit: error.message || 'Failed to submit form. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -91,11 +118,12 @@ const AddUserForm = ({ isOpen, onClose, onSubmit, userType }) => {
       subject: '',
       qualification: '',
       joiningDate: '',
-      class: '',
+      classId: '',
       section: '',
       rollNo: '',
       admissionNo: '',
       parentName: '',
+      parentPhone: '',
       image: null
     });
     setErrors({});
@@ -210,16 +238,20 @@ const AddUserForm = ({ isOpen, onClose, onSubmit, userType }) => {
           {userType === 'student' && (
             <>
               <div className="form-group">
-                <label htmlFor="class">Class</label>
-                <input
-                  type="text"
-                  id="class"
-                  name="class"
-                  value={formData.class}
+                <label htmlFor="classId">Class</label>
+                <select
+                  id="classId"
+                  name="classId"
+                  value={formData.classId}
                   onChange={handleChange}
-                  className={errors.class ? 'error' : ''}
-                />
-                {errors.class && <span className="error-message">{errors.class}</span>}
+                  className={errors.classId ? 'error' : ''}
+                >
+                  <option value="">Select Class</option>
+                  {classes.map(cls => (
+                    <option key={cls._id} value={cls._id}>{cls.name} - {cls.section}</option>
+                  ))}
+                </select>
+                {errors.classId && <span className="error-message">{errors.classId}</span>}
               </div>
 
               <div className="form-group">
@@ -236,7 +268,7 @@ const AddUserForm = ({ isOpen, onClose, onSubmit, userType }) => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="rollNo">Roll No.</label>
+                <label htmlFor="rollNo">Roll Number</label>
                 <input
                   type="text"
                   id="rollNo"
@@ -249,7 +281,7 @@ const AddUserForm = ({ isOpen, onClose, onSubmit, userType }) => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="admissionNo">Admission No.</label>
+                <label htmlFor="admissionNo">Admission Number</label>
                 <input
                   type="text"
                   id="admissionNo"
@@ -273,6 +305,19 @@ const AddUserForm = ({ isOpen, onClose, onSubmit, userType }) => {
                 />
                 {errors.parentName && <span className="error-message">{errors.parentName}</span>}
               </div>
+
+              <div className="form-group">
+                <label htmlFor="parentPhone">Parent Phone</label>
+                <input
+                  type="tel"
+                  id="parentPhone"
+                  name="parentPhone"
+                  value={formData.parentPhone}
+                  onChange={handleChange}
+                  className={errors.parentPhone ? 'error' : ''}
+                />
+                {errors.parentPhone && <span className="error-message">{errors.parentPhone}</span>}
+              </div>
             </>
           )}
 
@@ -282,19 +327,19 @@ const AddUserForm = ({ isOpen, onClose, onSubmit, userType }) => {
               type="file"
               id="image"
               name="image"
-              onChange={handleChange}
               accept="image/*"
+              onChange={handleChange}
             />
           </div>
 
-          {errors.submit && <div className="error-message">{errors.submit}</div>}
+          {errors.submit && <span className="error-message">{errors.submit}</span>}
 
           <div className="form-actions">
-            <button type="button" onClick={handleClose} className="cancel-button">
+            <button type="button" className="cancel-button" onClick={handleClose} disabled={loading}>
               Cancel
             </button>
             <button type="submit" className="submit-button" disabled={loading}>
-              {loading ? 'Adding...' : `Add ${userType === 'teacher' ? 'Teacher' : 'Student'}`}
+              {loading ? 'Submitting...' : 'Add'}
             </button>
           </div>
         </form>
