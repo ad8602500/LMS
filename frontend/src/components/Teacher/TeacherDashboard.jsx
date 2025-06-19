@@ -1,7 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './TeacherDashboard.css';
 
 const TeacherDashboard = () => {
+  const [classes, setClasses] = useState([]);
+  const [selectedClass, setSelectedClass] = useState('');
+  const [students, setStudents] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const fetchClasses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      let url = '/api/admin/classes';
+      if (user?.role === 'TEACHER') {
+        url = '/api/teacher/classes';
+      }
+      const response = await axios.get(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setClasses(response.data);
+    } catch (error) {
+      // handle error
+    }
+  };
+
   return (
     <div className="teacher-dashboard">
       <div className="dashboard-content">

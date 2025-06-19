@@ -54,6 +54,9 @@ const AdminLayout = () => {
           <Link to="/admin/fees" className="nav-item">
             <i className="fas fa-money-bill-wave"></i>Fees
           </Link>
+          <Link to="/admin/timetable" className="nav-item">
+            <i className="fas fa-calendar-alt"></i>Timetable
+          </Link>
           {/* Add more admin specific links here */}
         </nav>
       </aside>

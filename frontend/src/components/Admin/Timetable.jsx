@@ -11,7 +11,7 @@ const Timetable = () => {
     day: '',
     period: '',
     subject: '',
-    teacher: '',
+    teacherId: '',
     startTime: '',
     endTime: '',
     room: ''
@@ -25,7 +25,11 @@ const Timetable = () => {
   useEffect(() => {
     fetchClasses();
     fetchTeachers();
+  }, []);
+
+  useEffect(() => {
     if (selectedClass) {
+      setLoading(true);
       fetchTimetable();
     }
   }, [selectedClass]);
@@ -112,8 +116,8 @@ const Timetable = () => {
         setFormData({
           day: '',
           period: '',
+          teacherId: '',
           subject: '',
-          teacher: '',
           startTime: '',
           endTime: '',
           room: ''
@@ -134,7 +138,7 @@ const Timetable = () => {
     }));
   };
 
-  if (loading) {
+  if (loading && selectedClass) {
     return <div className="loading">Loading timetable...</div>;
   }
 
@@ -257,9 +261,9 @@ const Timetable = () => {
               <div className="form-group">
                 <label htmlFor="teacher">Teacher</label>
                 <select
-                  id="teacher"
-                  name="teacher"
-                  value={formData.teacher}
+                  id="teacherId"
+                  name="teacherId"
+                  value={formData.teacherId}
                   onChange={handleChange}
                   required
                 >

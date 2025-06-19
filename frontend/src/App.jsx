@@ -16,7 +16,15 @@ import TeacherLayout from './components/Teacher/TeacherLayout';
 import TeacherDashboard from './components/Teacher/TeacherDashboard';
 import StudentDashboard from './components/Student/StudentDashboard';
 import StudentLayout from './components/Student/StudentLayout';
+import Courses from './components/Teacher/Courses';
+import Assignments from './components/Teacher/Assignments';
+import Schedule from './components/Teacher/Schedule';
+import Communication from './components/Teacher/Communication';
+import Reports from './components/Teacher/Reports';
+import Profile from './components/Teacher/Profile';
+import Timetable from './components/Admin/Timetable';
 import './App.css';
+import { useState } from 'react';
 
 // Protected Route component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -50,6 +58,24 @@ const theme = createTheme({
 });
 
 const App = () => {
+  const [expandedClassId, setExpandedClassId] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState(null);
+
+  const handleClassClick = async (classId) => {
+    setSelectedClassId(classId);
+    setLoadingStudents(true);
+    setStudents([]);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`/api/admin/classes/${classId}/students`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await response.json();
+    setStudents(data);
+    setLoadingStudents(false);
+  };
+
   return (
     <SnackbarProvider maxSnack={3}>
       <ThemeProvider theme={theme}>
@@ -75,6 +101,7 @@ const App = () => {
               <Route path="classes" element={<Classes />} />
               <Route path="attendance" element={<Attendance />} />
               <Route path="fees" element={<Fees />} />
+              <Route path="timetable" element={<Timetable />} />
             </Route>
 
             {/* Teacher Routes */}
@@ -88,7 +115,14 @@ const App = () => {
             >
               <Route index element={<TeacherDashboard />} />
               <Route path="dashboard" element={<TeacherDashboard />} />
-              {/* Future teacher routes will go here */}
+              <Route path="courses" element={<Courses />} />
+              <Route path="assignments" element={<Assignments />} />
+              <Route path="schedule" element={<Schedule />} />
+              <Route path="students" element={<Students />} />
+              <Route path="attendance" element={<Attendance />} />
+              <Route path="communication" element={<Communication />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="profile" element={<Profile />} />
             </Route>
 
             {/* Student Routes */}

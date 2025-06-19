@@ -16,6 +16,8 @@ import classRoutes from './routes/class.js';
 import timetableRoutes from './routes/timetable.js';
 import adminRoutes from './routes/admin.js';
 import teacherDashboardRoutes from './routes/teacherDashboard.js';
+import attendanceRoutes from './routes/attendance.js';
+import feesRoutes from './routes/fees.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -57,6 +59,8 @@ app.use('/api/admin/classes', classRoutes);
 app.use('/api/admin/timetable', timetableRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/teacher/dashboard', teacherDashboardRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/fees', feesRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
