@@ -51,7 +51,7 @@ const AdminDashboard = () => {
         return;
       }
 
-      const response = await axios.get('https://lms-bice-beta.vercel.app/api/admin/stats', {
+      const response = await axios.get('https://lms-ul7x.onrender.com/api/admin/stats', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

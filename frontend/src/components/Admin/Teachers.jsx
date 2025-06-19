@@ -28,7 +28,7 @@ const Teachers = () => {
   const fetchTeachers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://lms-bice-beta.vercel.app/api/admin/teachers', {
+      const response = await fetch('https://lms-ul7x.onrender.com/api/admin/teachers', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -51,7 +51,7 @@ const Teachers = () => {
     setError('');
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://lms-bice-beta.vercel.app/api/admin/teachers', {
+      const response = await fetch('https://lms-ul7x.onrender.com/api/admin/teachers', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -87,7 +87,7 @@ const Teachers = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://lms-bice-beta.vercel.app/api/admin/teachers/${selectedTeacher._id}`, {
+      const response = await fetch(`https://lms-ul7x.onrender.com/api/admin/teachers/${selectedTeacher._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -116,7 +116,7 @@ const Teachers = () => {
     }
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://lms-bice-beta.vercel.app/api/admin/teachers/${teacherId}`, {
+      const response = await fetch(`https://lms-ul7x.onrender.com/api/admin/teachers/${teacherId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
