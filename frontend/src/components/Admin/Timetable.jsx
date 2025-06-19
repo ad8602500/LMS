@@ -37,7 +37,7 @@ const Timetable = () => {
   const fetchClasses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/classes', {
+      const response = await fetch('https://lms-bice-beta.vercel.app/api/admin/classes', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -56,7 +56,7 @@ const Timetable = () => {
   const fetchTeachers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/teachers', {
+      const response = await fetch('https://lms-bice-beta.vercel.app/api/admin/teachers', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -75,7 +75,7 @@ const Timetable = () => {
   const fetchTimetable = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/admin/timetable/${selectedClass}`, {
+      const response = await fetch(`https://lms-bice-beta.vercel.app/api/admin/timetable/${selectedClass}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -97,7 +97,7 @@ const Timetable = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/timetable', {
+      const response = await fetch('https://lms-bice-beta.vercel.app/api/admin/timetable', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

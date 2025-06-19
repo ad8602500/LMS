@@ -41,7 +41,7 @@ const Students = () => {
   const fetchClasses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/classes', {
+      const response = await fetch('https://lms-bice-beta.vercel.app/api/admin/classes', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -59,7 +59,7 @@ const Students = () => {
   const fetchSections = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/sections', {
+      const response = await fetch('https://lms-bice-beta.vercel.app/api/admin/sections', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -77,7 +77,7 @@ const Students = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/students', {
+      const response = await fetch('https://lms-bice-beta.vercel.app/api/admin/students', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -100,7 +100,7 @@ const Students = () => {
   const handleAddStudent = async (formDataToSend) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:5000/api/admin/students', 
+      const response = await axios.post('https://lms-bice-beta.vercel.app/api/admin/students', 
         formDataToSend,
         {
           headers: {
@@ -131,7 +131,7 @@ const Students = () => {
   const handleEditStudent = async (formDataToSend) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put(`http://localhost:5000/api/admin/students/${selectedStudent._id}`, 
+      const response = await axios.put(`https://lms-bice-beta.vercel.app/api/admin/students/${selectedStudent._id}`, 
         formDataToSend,
         {
           headers: {
@@ -160,7 +160,7 @@ const Students = () => {
     }
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`http://localhost:5000/api/admin/students/${studentId}`, {
+      const response = await axios.delete(`https://lms-bice-beta.vercel.app/api/admin/students/${studentId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

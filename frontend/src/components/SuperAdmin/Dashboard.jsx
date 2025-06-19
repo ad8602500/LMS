@@ -75,7 +75,7 @@ const SuperAdminDashboard = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/super-admin/schools', {
+      const response = await fetch('https://lms-bice-beta.vercel.app/api/super-admin/schools', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -107,7 +107,7 @@ const SuperAdminDashboard = () => {
     setIsDeleting(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/super-admin/schools/${schoolId}`, {
+      const response = await fetch(`https://lms-bice-beta.vercel.app/api/super-admin/schools/${schoolId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -143,7 +143,7 @@ const SuperAdminDashboard = () => {
     setError('');
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/register-school', {
+      const response = await fetch('https://lms-bice-beta.vercel.app/api/auth/register-school', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -23,7 +23,7 @@ const Classes = () => {
   const fetchClasses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/classes', {
+      const response = await fetch('https://lms-bice-beta.vercel.app/api/admin/classes', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -44,7 +44,7 @@ const Classes = () => {
   const fetchTeachers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/teachers', {
+      const response = await fetch('https://lms-bice-beta.vercel.app/api/admin/teachers', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -69,7 +69,7 @@ const Classes = () => {
         teacherId: formData.teacherId || null
       };
 
-      const response = await fetch('http://localhost:5000/api/admin/classes', {
+      const response = await fetch('https://lms-bice-beta.vercel.app/api/admin/classes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
