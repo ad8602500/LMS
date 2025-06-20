@@ -56,7 +56,7 @@ const Fees = () => {
 
   const fetchClasses = async () => {
     try {
-      const response = await axios.get('/api/classes');
+      const response = await axios.get('https://lms-ul7x.onrender.com/api/classes');
       setClasses(response.data);
     } catch (error) {
       enqueueSnackbar('Error fetching classes', { variant: 'error' });
@@ -65,7 +65,7 @@ const Fees = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get(`/api/classes/${selectedClass}/students`);
+      const response = await axios.get(`https://lms-ul7x.onrender.com/api/classes/${selectedClass}/students`);
       setStudents(response.data);
     } catch (error) {
       enqueueSnackbar('Error fetching students', { variant: 'error' });
@@ -74,7 +74,7 @@ const Fees = () => {
 
   const fetchFees = async () => {
     try {
-      const response = await axios.get(`/api/fees/class/${selectedClass}`);
+      const response = await axios.get(`https://lms-ul7x.onrender.com/api/fees/class/${selectedClass}`);
       setFees(response.data);
     } catch (error) {
       enqueueSnackbar('Error fetching fees', { variant: 'error' });
@@ -83,7 +83,7 @@ const Fees = () => {
 
   const fetchSummary = async () => {
     try {
-      const response = await axios.get(`/api/fees/summary/class/${selectedClass}`);
+      const response = await axios.get(`https://lms-ul7x.onrender.com/api/fees/summary/class/${selectedClass}`);
       setSummary(response.data);
     } catch (error) {
       enqueueSnackbar('Error fetching fee summary', { variant: 'error' });
@@ -132,10 +132,10 @@ const Fees = () => {
       };
 
       if (selectedFee) {
-        await axios.put(`/api/fees/${selectedFee._id}`, data);
+        await axios.put(`https://lms-ul7x.onrender.com/api/fees/${selectedFee._id}`, data);
         enqueueSnackbar('Fee updated successfully', { variant: 'success' });
       } else {
-        await axios.post('/api/fees', data);
+        await axios.post('https://lms-ul7x.onrender.com/api/fees', data);
         enqueueSnackbar('Fee added successfully', { variant: 'success' });
       }
 
@@ -150,7 +150,7 @@ const Fees = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this fee record?')) {
       try {
-        await axios.delete(`/api/fees/${id}`);
+        await axios.delete(`https://lms-ul7x.onrender.com/api/fees/${id}`);
         enqueueSnackbar('Fee deleted successfully', { variant: 'success' });
         fetchFees();
         fetchSummary();

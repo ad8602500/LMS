@@ -60,7 +60,7 @@ const SuperAdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('/api/super-admin/stats');
+      const response = await axios.get('https://lms-ul7x.onrender.com/api/super-admin/stats');
       setStats(response.data);
     } catch (error) {
       enqueueSnackbar('Error fetching dashboard statistics', { variant: 'error' });

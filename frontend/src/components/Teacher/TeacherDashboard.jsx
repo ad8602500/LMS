@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 import './TeacherDashboard.css';
+import axios from 'axios';
 
 const TeacherDashboard = () => {
   const [classes, setClasses] = useState([]);
@@ -10,16 +10,12 @@ const TeacherDashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const user = JSON.parse(localStorage.getItem('user'));
 
-  useEffect(() => {
-    fetchClasses();
-  }, []);
-
   const fetchClasses = async () => {
     try {
       const token = localStorage.getItem('token');
-      let url = '/api/admin/classes';
+      let url = 'https://lms-ul7x.onrender.com/api/admin/classes';
       if (user?.role === 'TEACHER') {
-        url = '/api/teacher/classes';
+        url = 'https://lms-ul7x.onrender.com/api/teacher/classes';
       }
       const response = await axios.get(url, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -29,6 +25,10 @@ const TeacherDashboard = () => {
       // handle error
     }
   };
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
 
   return (
     <div className="teacher-dashboard">

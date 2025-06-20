@@ -68,7 +68,7 @@ const App = () => {
     setLoadingStudents(true);
     setStudents([]);
     const token = localStorage.getItem('token');
-    const response = await fetch(`/api/admin/classes/${classId}/students`, {
+    const response = await fetch(`https://lms-ul7x.onrender.com/api/admin/classes/${classId}/students`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await response.json();
