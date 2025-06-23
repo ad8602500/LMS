@@ -41,7 +41,7 @@ const Register = () => {
 
     try {
       setLoading(true);
-      const response = await axios.post('https://lms-ul7x.onrender.com/api/auth/register', {
+      const response = await axios.post('http://localhost:5000/api/auth/register', {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,

@@ -3,6 +3,7 @@ import Class from '../models/Class.js';
 import School from '../models/School.js';
 import User from '../models/User.js';
 import { auth } from '../middleware/auth.js';
+import Timetable from '../models/Timetable.js';
 
 const router = express.Router();
 
@@ -135,6 +136,27 @@ router.get('/teacher/classes', auth, async (req, res) => {
     }
     const classes = await Class.find({ teacherId: req.user._id, schoolId: req.user.schoolId });
     res.json(classes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Pseudocode for timetable creation
+router.post('/timetable', auth, async (req, res) => {
+  try {
+    const isTeacherAvailable = await Timetable.findOne({
+      day: req.body.day,
+      period: req.body.period,
+      teacherId: req.body.teacherId
+    });
+    if (isTeacherAvailable) {
+      return res.status(400).json({ message: 'Teacher is already assigned to another class at this time.' });
+    }
+
+    // Similar check for classroom if needed
+
+    // If checks pass, proceed with timetable creation
+    // ... (rest of the function)
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

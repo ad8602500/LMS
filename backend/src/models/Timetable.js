@@ -23,7 +23,7 @@ const timetableSchema = new mongoose.Schema({
   },
   teacherId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Teacher',
+    ref: 'User',
     required: true
   },
   startTime: {
@@ -33,11 +33,6 @@ const timetableSchema = new mongoose.Schema({
   endTime: {
     type: String,
     required: true
-  },
-  room: {
-    type: String,
-    required: true,
-    trim: true
   },
   schoolId: {
     type: mongoose.Schema.Types.ObjectId,

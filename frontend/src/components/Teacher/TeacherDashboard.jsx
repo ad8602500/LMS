@@ -13,9 +13,9 @@ const TeacherDashboard = () => {
   const fetchClasses = async () => {
     try {
       const token = localStorage.getItem('token');
-      let url = 'https://lms-ul7x.onrender.com/api/admin/classes';
+      let url = 'http://localhost:5000/api/admin/classes';
       if (user?.role === 'TEACHER') {
-        url = 'https://lms-ul7x.onrender.com/api/teacher/classes';
+        url = 'http://localhost:5000/api/teacher/classes';
       }
       const response = await axios.get(url, {
         headers: { 'Authorization': `Bearer ${token}` }

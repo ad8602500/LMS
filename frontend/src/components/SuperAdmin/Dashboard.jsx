@@ -60,7 +60,7 @@ const SuperAdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('https://lms-ul7x.onrender.com/api/super-admin/stats');
+      const response = await axios.get('http://localhost:5000/api/super-admin/stats');
       setStats(response.data);
     } catch (error) {
       enqueueSnackbar('Error fetching dashboard statistics', { variant: 'error' });
@@ -75,7 +75,7 @@ const SuperAdminDashboard = () => {
         return;
       }
 
-      const response = await fetch('https://lms-ul7x.onrender.com/api/super-admin/schools', {
+      const response = await fetch('http://localhost:5000/api/super-admin/schools', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -107,8 +107,7 @@ const SuperAdminDashboard = () => {
     setIsDeleting(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://lms-ul7x.onrender.com/api/super-admin/schools/${schoolId}`, {
-        method: 'DELETE',
+        const response = await fetch(`http://localhost:5000/api/super-admin/schools/${schoolId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -143,7 +142,7 @@ const SuperAdminDashboard = () => {
     setError('');
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://lms-ul7x.onrender.com/api/auth/register-school', {
+      const response = await fetch('http://localhost:5000/api/auth/register-school', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

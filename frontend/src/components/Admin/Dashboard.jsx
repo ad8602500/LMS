@@ -51,7 +51,7 @@ const AdminDashboard = () => {
         return;
       }
 
-      const response = await axios.get('https://lms-ul7x.onrender.com/api/admin/stats', {
+      const response = await axios.get('http://localhost:5000/api/admin/stats', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

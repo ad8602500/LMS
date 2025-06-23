@@ -44,7 +44,7 @@ const Attendance = () => {
   const fetchClasses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://lms-ul7x.onrender.com/api/admin/classes', {
+      const response = await axios.get('http://localhost:5000/api/admin/classes', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -58,7 +58,7 @@ const Attendance = () => {
   const fetchStudents = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`https://lms-ul7x.onrender.com/api/admin/classes/${selectedClass}/students`, {
+      const response = await axios.get(`http://localhost:5000/api/admin/classes/${selectedClass}/students`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -72,7 +72,7 @@ const Attendance = () => {
   const fetchAttendance = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`https://lms-ul7x.onrender.com/api/attendance/class/${selectedClass}?date=${selectedDate}`, {
+      const response = await axios.get(`http://localhost:5000/api/attendance/class/${selectedClass}?date=${selectedDate}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -97,7 +97,7 @@ const Attendance = () => {
         }]
       };
 
-      await axios.post('https://lms-ul7x.onrender.com/api/attendance/mark', data, {
+      await axios.post('http://localhost:5000/api/attendance/mark', data, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
