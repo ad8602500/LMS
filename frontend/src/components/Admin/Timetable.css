@@ -1,17 +1,23 @@
 .timetable-section {
-  padding: 1rem;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 20px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
 }
 
 .section-header h2 {
+  color: #2c3e50;
   margin: 0;
-  color: #333;
 }
 
 .header-actions {
@@ -21,11 +27,19 @@
 }
 
 .class-select {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
+  padding: 8px 15px;
   border-radius: 4px;
-  font-size: 1rem;
+  border: 1px solid #ddd;
   min-width: 200px;
+  background: white;
+  font-size: 14px;
+  color: #2c3e50;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.class-select:hover {
+  border-color: #4a90e2;
 }
 
 .add-button {
@@ -49,113 +63,239 @@
 }
 
 .timetable-grid {
-  background: white;
+  border: 1px solid #e1e4e8;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow-x: auto;
+  overflow: hidden;
+  background: white;
 }
 
 .timetable-header {
   display: grid;
-  grid-template-columns: 100px repeat(6, 1fr);
-  background-color: #f8f9fa;
-  border-bottom: 2px solid #dee2e6;
+  grid-template-columns: 80px repeat(6, 1fr);
+  background: #4a90e2;
+  color: white;
+  font-weight: bold;
 }
 
 .header-cell {
-  padding: 1rem;
+  padding: 15px;
   text-align: center;
-  font-weight: 600;
-  color: #333;
-  border-right: 1px solid #dee2e6;
-}
-
-.header-cell:last-child {
-  border-right: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 14px;
 }
 
 .timetable-row {
   display: grid;
-  grid-template-columns: 100px repeat(6, 1fr);
-  border-bottom: 1px solid #dee2e6;
+  grid-template-columns: 80px repeat(6, 1fr);
 }
 
-.timetable-row:last-child {
-  border-bottom: none;
+.timetable-row:nth-child(even) {
+  background: #f8f9fa;
 }
 
 .period-cell {
-  padding: 1rem;
+  padding: 15px;
   text-align: center;
-  font-weight: 500;
-  color: #666;
-  background-color: #f8f9fa;
-  border-right: 1px solid #dee2e6;
+  background: #2c3e50;
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: bold;
 }
 
 .schedule-cell {
-  padding: 0.5rem;
-  border-right: 1px solid #dee2e6;
-  min-height: 100px;
+  padding: 15px;
+  border-right: 1px solid #e1e4e8;
+  border-bottom: 1px solid #e1e4e8;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s ease;
 }
 
-.schedule-cell:last-child {
-  border-right: none;
+.schedule-cell:hover {
+  background: #f8f9fa;
 }
 
-.schedule-entry {
-  background-color: #e3f2fd;
-  border-radius: 4px;
-  padding: 0.75rem;
-  height: 100%;
+.cell-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
-.schedule-entry .subject {
-  font-weight: 600;
-  color: #1976d2;
-  margin-bottom: 0.25rem;
+/* Subject-specific colors */
+.cell-content[data-subject="math"] {
+  background: rgba(64, 159, 255, 0.1);
+  border-left: 4px solid #409fff;
 }
 
-.schedule-entry .teacher {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
+.cell-content[data-subject="science"] {
+  background: rgba(76, 175, 80, 0.1);
+  border-left: 4px solid #4CAF50;
 }
 
-.schedule-entry .time {
-  color: #666;
-  font-size: 0.85rem;
-  margin-bottom: 0.25rem;
+.cell-content[data-subject="english"] {
+  background: rgba(255, 152, 0, 0.1);
+  border-left: 4px solid #ff9800;
 }
 
-.schedule-entry .room {
-  color: #666;
-  font-size: 0.85rem;
+.cell-content[data-subject="hindi"] {
+  background: rgba(233, 30, 99, 0.1);
+  border-left: 4px solid #e91e63;
+}
+
+.cell-content[data-subject="bio"] {
+  background: rgba(156, 39, 176, 0.1);
+  border-left: 4px solid #9c27b0;
+}
+
+.cell-content[data-subject="physics"] {
+  background: rgba(0, 150, 136, 0.1);
+  border-left: 4px solid #009688;
+}
+
+.cell-content[data-subject="chemistry"] {
+  background: rgba(255, 87, 34, 0.1);
+  border-left: 4px solid #ff5722;
+}
+
+.subject {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.teacher {
+  color: #5a6776;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.time {
+  color: #7f8c9d;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: inline-block;
 }
 
 .empty-cell {
+  color: #bdc3c7;
+  text-align: center;
+  padding: 10px;
+  font-style: italic;
+}
+
+.edit-button {
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.3s ease;
+  color: #2c3e50;
+  font-size: 13px;
+}
+
+.edit-button:hover {
+  background: #e0e0e0;
+  border-color: #4a90e2;
+  color: #4a90e2;
+}
+
+.edit-form {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  width: 350px;
+}
+
+.edit-form h3 {
+  margin: 0 0 20px 0;
+  color: #2c3e50;
+  font-size: 18px;
+}
+
+.edit-form input,
+.edit-form select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.edit-form input:focus,
+.edit-form select:focus {
+  border-color: #4a90e2;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.edit-form .button-group {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  color: #999;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.edit-form button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.edit-form button.save {
+  background: #4CAF50;
+  color: white;
+}
+
+.edit-form button.save:hover {
+  background: #43a047;
+}
+
+.edit-form button.cancel {
+  background: #f44336;
+  color: white;
+}
+
+.edit-form button.cancel:hover {
+  background: #e53935;
 }
 
 .error-message {
-  background-color: #f8d7da;
-  color: #721c24;
-  padding: 1rem;
+  color: #f44336;
+  margin-bottom: 15px;
+  padding: 12px;
+  background: #ffebee;
   border-radius: 4px;
-  margin-bottom: 1rem;
+  border-left: 4px solid #f44336;
+  font-size: 14px;
 }
 
 .loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
+  text-align: center;
+  padding: 40px;
   color: #666;
-  font-size: 1.1rem;
+  font-size: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 20px 0;
 }
 
 /* Modal styles */

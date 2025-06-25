@@ -2,8 +2,11 @@ import express from 'express';
 import Timetable from '../models/Timetable.js';
 import School from '../models/School.js';
 import { auth } from '../middleware/auth.js';
+import { checkRole } from '../middleware/auth.js';
 
 const router = express.Router();
+
+const periods = ['1', '2', '3', '4', '5', '6', '7', '8'];
 
 // Get timetable for a specific class
 router.get('/:classId', auth, async (req, res) => {
@@ -14,7 +17,12 @@ router.get('/:classId', auth, async (req, res) => {
       query.schoolId = req.user.schoolId;
     }
 
-    const timetable = await Timetable.find(query).sort({ day: 1, period: 1 });
+    // Use populate for teacher, class, and school details
+    const timetable = await Timetable.find(query)
+      .sort({ day: 1, period: 1 })
+      .populate('teacherId', 'firstName lastName email')
+      .populate('classId', 'name section')
+      .populate('schoolId', 'name');
     res.json(timetable);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -126,6 +134,44 @@ router.delete('/:id', auth, async (req, res) => {
     res.json({ message: 'Timetable entry deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Get teacher's timetable grouped by day
+router.get('/timetable', auth, checkRole(['TEACHER']), async (req, res) => {
+  try {
+    const teacherId = req.user._id; // Get teacher ID from authenticated user
+    console.log('Fetching timetable for teacher:', teacherId);
+
+    // Find all timetable entries for this teacher
+    const timetableEntries = await Timetable.find({ teacherId })
+      .populate('classId', 'name section')
+      .populate('schoolId', 'name')
+      .sort({ day: 1, period: 1 });
+
+    console.log('Found entries:', timetableEntries.length);
+
+    // Group by day
+    const grouped = {};
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    // Initialize all days
+    days.forEach(day => {
+      grouped[day] = [];
+    });
+
+    // Group entries by day
+    timetableEntries.forEach(entry => {
+      if (grouped[entry.day]) {
+        grouped[entry.day].push(entry);
+      }
+    });
+
+    console.log('Grouped timetable:', grouped);
+    res.json({ timetable: grouped });
+  } catch (error) {
+    console.error('Error fetching teacher timetable:', error);
+    res.status(500).json({ message: 'Error fetching teacher timetable' });
   }
 });
 

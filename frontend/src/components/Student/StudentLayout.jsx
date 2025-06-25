@@ -1,10 +1,11 @@
 import React from 'react';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import './StudentLayout.css';
 
 const StudentLayout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
 
   // Dummy user data for demonstration, replace with actual user data from context/state
@@ -24,6 +25,20 @@ const StudentLayout = () => {
     navigate('/login');
   };
 
+  const navItems = [
+    { path: 'dashboard', icon: 'fas fa-tachometer-alt', label: 'Dashboard' },
+    { path: 'profile', icon: 'fas fa-user', label: 'Personal Info' },
+    { path: 'timetable', icon: 'fas fa-calendar-alt', label: 'Timetable' },
+    { path: 'subjects', icon: 'fas fa-book', label: 'Subjects & Teachers' },
+    { path: 'assignments', icon: 'fas fa-tasks', label: 'Assignments' },
+    { path: 'exams', icon: 'fas fa-file-alt', label: 'Exams & Results' },
+    { path: 'attendance', icon: 'fas fa-check-circle', label: 'Attendance' },
+    { path: 'notices', icon: 'fas fa-bullhorn', label: 'Notices' },
+    { path: 'documents', icon: 'fas fa-folder', label: 'Documents' },
+    { path: 'messages', icon: 'fas fa-envelope', label: 'Messages' },
+    { path: 'fees', icon: 'fas fa-money-bill', label: 'Fee Details' }
+  ];
+
   return (
     <div className="student-layout">
       <aside className="student-sidebar">
@@ -37,27 +52,24 @@ const StudentLayout = () => {
           </Link>
         </div>
         <nav className="student-nav-links">
-          <Link to="/student/dashboard" className="nav-item">
-            <i className="fas fa-tachometer-alt"></i>Dashboard
-          </Link>
-          <Link to="/student/ums-home" className="nav-item">
-            <i className="fas fa-home"></i>UMS Home
-          </Link>
-          <Link to="/student/lpu-touch" className="nav-item">
-            <i className="fas fa-mobile-alt"></i>LPU Touch
-          </Link>
-          <Link to="/student/my-class" className="nav-item">
-            <i className="fas fa-chalkboard"></i>My Class
-          </Link>
-          <Link to="/student/your-dost" className="nav-item">
-            <i className="fas fa-users"></i>YourDost
-          </Link>
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={`/student/${item.path}`}
+              className={`nav-item ${location.pathname === `/student/${item.path}` ? 'active' : ''}`}
+            >
+              <i className={item.icon}></i>
+              {item.label}
+            </Link>
+          ))}
         </nav>
       </aside>
       <main className="student-main-content">
         <header className="student-main-header">
           <div className="header-left">
-            {/* Expand/Collapse sidebar button if needed */}
+            <div className="current-page">
+              {navItems.find(item => location.pathname.includes(item.path))?.label || 'Dashboard'}
+            </div>
           </div>
           <div className="header-right">
             <div className="profile-section">
@@ -67,7 +79,10 @@ const StudentLayout = () => {
                 <p className="user-info">{user.branch}</p>
               </div>
               <img src={user.profilePic} alt="Profile" className="profile-pic" />
-              <button onClick={handleLogout} className="sign-out-button">Sign out</button>
+              <button onClick={handleLogout} className="sign-out-button">
+                <i className="fas fa-sign-out-alt"></i>
+                Sign out
+              </button>
             </div>
           </div>
         </header>

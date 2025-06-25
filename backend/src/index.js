@@ -1,6 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -18,6 +19,9 @@ import adminRoutes from './routes/admin.js';
 import teacherDashboardRoutes from './routes/teacherDashboard.js';
 import attendanceRoutes from './routes/attendance.js';
 import feesRoutes from './routes/fees.js';
+import jwt from 'jsonwebtoken';
+import Timetable from './models/Timetable.js';
+import { auth, checkRole } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -33,10 +37,15 @@ const allowedOrigins = [
   'https://lms-of1h.vercel.app'
 ];
 
+// Add cookie parser BEFORE cors middleware
+app.use(cookieParser());
+
+// Configure CORS with specific options
 app.use(cors({
-  origin: allowedOrigins,
+  origin: 'http://localhost:5173', // or your deployed frontend
   credentials: true
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -70,6 +79,15 @@ app.use('/api/teacher/dashboard', teacherDashboardRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/fees', feesRoutes);
 
+// Add this to your index.js for testing
+app.get('/api/test-auth', (req, res) => {
+  console.log('Cookies received:', req.cookies);
+  res.json({ 
+    cookies: req.cookies,
+    token: req.cookies.token ? 'present' : 'missing'
+  });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -79,4 +97,26 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-}); 
+});
+
+const router = express.Router();
+
+router.get('/teacher/schedule', auth, checkRole(['TEACHER']), async (req, res) => {
+  try {
+    const teacherId = req.user._id;
+    const entries = await Timetable.find({ teacherId });
+
+    // Group by day
+    const grouped = {};
+    for (const entry of entries) {
+      if (!grouped[entry.day]) grouped[entry.day] = [];
+      grouped[entry.day].push(entry);
+    }
+
+    res.json({ timetable: grouped });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+export default router; 

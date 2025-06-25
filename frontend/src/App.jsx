@@ -14,8 +14,9 @@ import Fees from './components/Admin/Fees';
 import SuperAdminDashboard from './components/SuperAdmin/Dashboard';
 import TeacherLayout from './components/Teacher/TeacherLayout';
 import TeacherDashboard from './components/Teacher/TeacherDashboard';
-import StudentDashboard from './components/Student/StudentDashboard';
 import StudentLayout from './components/Student/StudentLayout';
+import StudentDashboard from './components/Student/StudentDashboard';
+import StudentProfile from './components/Student/Profile/StudentProfile';
 import Courses from './components/Teacher/Courses';
 import Assignments from './components/Teacher/Assignments';
 import Schedule from './components/Teacher/Schedule';
@@ -126,16 +127,10 @@ const App = () => {
             </Route>
 
             {/* Student Routes */}
-            <Route
-              path="/student"
-              element={
-                <ProtectedRoute allowedRoles={['STUDENT']}>
-                  <StudentLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<StudentDashboard />} />
+            <Route path="/student" element={<StudentLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<StudentDashboard />} />
+              <Route path="profile" element={<StudentProfile />} />
             </Route>
 
             {/* Super Admin Routes */}
