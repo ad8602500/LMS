@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 
 // Create axios instance for backend API
 const api = axios.create({
@@ -95,8 +95,9 @@ const Schedule = () => {
         setLoading(true);
         setError('');
         
-        const response = await axios.get('http://localhost:5000/api/admin/timetable/timetable', { 
-          withCredentials: true 
+        const token = localStorage.getItem('token');
+        const response = await axios.get('http://localhost:5000/api/admin/timetable/timetable', {
+          headers: { Authorization: `Bearer ${token}` }
         });
         
         console.log('API response:', response.data);
