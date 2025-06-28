@@ -109,6 +109,72 @@ const userSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  // Teacher profile fields (editable only once)
+  permanentAddress: {
+    type: String,
+    trim: true
+  },
+  currentAddress: {
+    type: String,
+    trim: true
+  },
+  aadharNumber: {
+    type: String,
+    trim: true
+  },
+  panNumber: {
+    type: String,
+    trim: true
+  },
+  motherName: {
+    type: String,
+    trim: true
+  },
+  fatherName: {
+    type: String,
+    trim: true
+  },
+  bankAccountNumber: {
+    type: String,
+    trim: true
+  },
+  ifscCode: {
+    type: String,
+    trim: true
+  },
+  // Optional extra fields
+  dateOfBirth: {
+    type: Date
+  },
+  gender: {
+    type: String,
+    enum: ['Male', 'Female', 'Other']
+  },
+  maritalStatus: {
+    type: String,
+    enum: ['Single', 'Married', 'Divorced', 'Widowed']
+  },
+  mobileNumber: {
+    type: String,
+    trim: true
+  },
+  emergencyContactNumber: {
+    type: String,
+    trim: true
+  },
+  emailId: {
+    type: String,
+    trim: true
+  },
+  bloodGroup: {
+    type: String,
+    trim: true
+  },
+  // Lock profile after submission
+  profileFinalized: {
+    type: Boolean,
+    default: false
   }
 });
 

@@ -187,4 +187,55 @@ router.delete('/:id', auth, checkRole('ADMIN'), async (req, res) => {
   }
 });
 
+// Get current teacher's profile
+router.get('/me', auth, checkRole('TEACHER'), async (req, res) => {
+  try {
+    const teacher = await User.findOne({ _id: req.user._id, role: 'TEACHER' }).select('-password');
+    if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
+    res.json(teacher);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update current teacher's profile (only if not finalized)
+router.put('/me', auth, checkRole('TEACHER'), async (req, res) => {
+  try {
+    const teacher = await User.findOne({ _id: req.user._id, role: 'TEACHER' });
+    if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
+    if (teacher.profileFinalized) {
+      return res.status(403).json({ message: 'Profile already finalized. No further edits allowed.' });
+    }
+    // Validate required fields
+    const requiredFields = [
+      'permanentAddress', 'currentAddress', 'aadharNumber', 'panNumber',
+      'motherName', 'fatherName', 'bankAccountNumber', 'ifscCode'
+    ];
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        return res.status(400).json({ message: `Missing required field: ${field}` });
+      }
+    }
+    // Validate Aadhar (12 digits)
+    if (!/^\d{12}$/.test(req.body.aadharNumber)) {
+      return res.status(400).json({ message: 'Invalid Aadhar number format' });
+    }
+    // Validate PAN (5 letters, 4 digits, 1 letter)
+    if (!/^[A-Z]{5}\d{4}[A-Z]{1}$/.test(req.body.panNumber)) {
+      return res.status(400).json({ message: 'Invalid PAN number format' });
+    }
+    // Validate IFSC (4 letters, 0, 6 digits)
+    if (!/^[A-Z]{4}0\d{6}$/.test(req.body.ifscCode)) {
+      return res.status(400).json({ message: 'Invalid IFSC code format' });
+    }
+    // Save all fields
+    Object.assign(teacher, req.body);
+    teacher.profileFinalized = true;
+    await teacher.save();
+    res.json({ message: 'Profile updated and finalized', teacher });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 export default router; 

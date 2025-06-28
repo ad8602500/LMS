@@ -42,7 +42,7 @@ app.use(cookieParser());
 
 // Configure CORS with specific options
 app.use(cors({
-  origin: 'http://localhost:5173', // or your deployed frontend
+  origin: 'http://localhost:5173',
   credentials: true
 }));
 

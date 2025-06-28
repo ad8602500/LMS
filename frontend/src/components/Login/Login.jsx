@@ -62,17 +62,11 @@ const Login = () => {
 
       console.log('Attempting login with:', { ...loginData, password: '***' });
 
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(loginData),
-      });
+      const response = await axios.post('http://localhost:5000/api/auth/login', loginData, { withCredentials: true });
 
-      const data = await response.json();
+      const data = await response.data;
       
-      if (response.ok) {
+      if (response.status === 200) {
         const userData = {
           ...data.user,
           role: data.user.role

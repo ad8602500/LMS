@@ -24,6 +24,8 @@ import Communication from './components/Teacher/Communication';
 import Reports from './components/Teacher/Reports';
 import Profile from './components/Teacher/Profile';
 import Timetable from './components/Admin/Timetable';
+import StudentTimetable from './components/Student/StudentTimetable';
+import StudentAttendance from './components/Student/StudentAttendance';
 import './App.css';
 import { useState } from 'react';
 
@@ -131,6 +133,8 @@ const App = () => {
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<StudentDashboard />} />
               <Route path="profile" element={<StudentProfile />} />
+              <Route path="timetable" element={<StudentTimetable />} />
+              <Route path="attendance" element={<StudentAttendance />} />
             </Route>
 
             {/* Super Admin Routes */}
