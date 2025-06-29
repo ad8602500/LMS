@@ -26,6 +26,8 @@ import Profile from './components/Teacher/Profile';
 import Timetable from './components/Admin/Timetable';
 import StudentTimetable from './components/Student/StudentTimetable';
 import StudentAttendance from './components/Student/StudentAttendance';
+import MessagingPanel from './components/Student/MessagingPanel';
+import AdminMessages from './components/Admin/Messages';
 import './App.css';
 import { useState } from 'react';
 
@@ -105,6 +107,7 @@ const App = () => {
               <Route path="attendance" element={<Attendance />} />
               <Route path="fees" element={<Fees />} />
               <Route path="timetable" element={<Timetable />} />
+              <Route path="messages" element={<AdminMessages />} />
             </Route>
 
             {/* Teacher Routes */}
@@ -135,6 +138,7 @@ const App = () => {
               <Route path="profile" element={<StudentProfile />} />
               <Route path="timetable" element={<StudentTimetable />} />
               <Route path="attendance" element={<StudentAttendance />} />
+              <Route path="messages" element={<MessagingPanel user={JSON.parse(localStorage.getItem('user'))} />} />
             </Route>
 
             {/* Super Admin Routes */}

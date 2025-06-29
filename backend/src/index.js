@@ -22,6 +22,7 @@ import feesRoutes from './routes/fees.js';
 import jwt from 'jsonwebtoken';
 import Timetable from './models/Timetable.js';
 import { auth, checkRole } from './middleware/auth.js';
+import messageRoutes from './routes/message.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -39,11 +40,11 @@ const allowedOrigins = [
 
 // Add cookie parser BEFORE cors middleware
 app.use(cookieParser());
+app.use('/api/message', messageRoutes);
 
 // Configure CORS with specific options
 app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
+  origin: 'http://localhost:5173'
 }));
 
 app.use(express.json());
@@ -78,6 +79,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/teacher/dashboard', teacherDashboardRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/fees', feesRoutes);
+app.use('/api/student', studentRoutes);
 
 // Add this to your index.js for testing
 app.get('/api/test-auth', (req, res) => {

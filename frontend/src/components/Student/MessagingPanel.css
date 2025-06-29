@@ -1,0 +1,96 @@
+.messaging-panel-container {
+  max-width: 500px;
+  margin: 48px auto 0 auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  padding: 36px 32px 32px 32px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  text-align: center;
+}
+
+.messaging-panel-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2d3a4a;
+  margin-bottom: 18px;
+}
+
+.messaging-status {
+  margin-bottom: 18px;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #d32f2f;
+}
+
+.messaging-status.success {
+  color: #219653;
+}
+
+.messaging-form {
+  margin-bottom: 28px;
+}
+
+.messaging-form h3 {
+  color: #ff9800;
+  font-size: 1.15rem;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.messaging-form textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 1rem;
+  margin-bottom: 12px;
+  background: #f9f9f9;
+  resize: vertical;
+  transition: border 0.2s;
+}
+
+.messaging-form textarea:focus {
+  border: 1.5px solid #ff9800;
+  outline: none;
+}
+
+.messaging-form input[type="text"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-bottom: 12px;
+  background: #f9f9f9;
+  transition: border 0.2s;
+}
+
+.messaging-form input[type="text"]:focus {
+  border: 1.5px solid #ff9800;
+  outline: none;
+}
+
+.messaging-form button {
+  background: #ff9800;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 32px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+
+.messaging-form button:hover {
+  background: #e68a00;
+}
+
+@media (max-width: 600px) {
+  .messaging-panel-container {
+    padding: 18px 6vw 18px 6vw;
+  }
+} 

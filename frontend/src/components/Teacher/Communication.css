@@ -1,0 +1,186 @@
+.teacher-communication-page {
+  max-width: 900px;
+  margin: 36px auto 0 auto;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  padding: 32px 32px 32px 32px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.comm-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 0 16px;
+}
+
+.comm-title {
+  text-align: center;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1a237e;
+  margin-bottom: 28px;
+  letter-spacing: 1px;
+}
+
+.comm-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 32px rgba(30, 42, 90, 0.10);
+  padding: 32px 28px 24px 28px;
+  margin-bottom: 36px;
+}
+
+.comm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.comm-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.comm-form-group label {
+  font-weight: 600;
+  color: #283593;
+  font-size: 1rem;
+}
+
+.comm-form-group select,
+.comm-form-group input,
+.comm-form-group textarea {
+  border: 1.5px solid #c5cae9;
+  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 1rem;
+  background: #f5f7fa;
+  transition: border 0.2s;
+}
+
+.comm-form-group select:focus,
+.comm-form-group input:focus,
+.comm-form-group textarea:focus {
+  border: 1.5px solid #3949ab;
+  outline: none;
+  background: #fff;
+}
+
+.comm-form-group textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.comm-send-btn {
+  background: linear-gradient(90deg, #3949ab 60%, #1e88e5 100%);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 12px 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(30, 42, 90, 0.08);
+}
+
+.comm-send-btn:hover:not(:disabled) {
+  background: linear-gradient(90deg, #283593 60%, #1976d2 100%);
+  box-shadow: 0 4px 16px rgba(30, 42, 90, 0.13);
+}
+
+.comm-send-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.comm-status {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #d32f2f;
+}
+
+.comm-status.success {
+  color: #219653;
+}
+
+.comm-status.error {
+  color: #d32f2f;
+}
+
+.comm-messages-section {
+  margin-top: 18px;
+}
+
+.comm-messages-title {
+  color: #3949ab;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.comm-no-messages {
+  color: #888;
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.comm-messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comm-message-card {
+  background: #f5f7fa;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(30, 42, 90, 0.06);
+  padding: 16px 18px;
+  border-left: 4px solid #3949ab;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.comm-message-card:hover {
+  box-shadow: 0 4px 16px rgba(30, 42, 90, 0.13);
+  border-left: 4px solid #1e88e5;
+}
+
+.comm-message-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.98rem;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.comm-sender {
+  font-weight: 600;
+  color: #283593;
+}
+
+.comm-date {
+  font-size: 0.92rem;
+  color: #888;
+}
+
+.comm-message-content {
+  font-size: 1.08rem;
+  color: #222;
+  margin-top: 2px;
+}
+
+@media (max-width: 700px) {
+  .comm-container {
+    max-width: 98vw;
+    padding: 0 2vw;
+  }
+  .comm-card {
+    padding: 16px 6vw 16px 6vw;
+  }
+} 

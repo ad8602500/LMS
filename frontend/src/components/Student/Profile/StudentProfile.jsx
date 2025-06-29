@@ -1,62 +1,44 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './StudentProfile.css';
-
-const profileData = {
-  personal: {
-    vid: '12106635',
-    name: 'Aditya Pratap Singh Dangi',
-    fatherName: 'Gajendra Singh',
-    motherName: 'Seema Devi',
-    gender: 'M',
-    dob: '2003-02-17',
-    category: 'OBC',
-    studentMobile: '8817016591',
-    fatherMobile: '9617746739',
-    email: 'ad8602500@gmail.com',
-    lpuEmail: 'aditya.12106635@lpu.in',
-    fatherEmail: 'ad8602500@gmail.com',
-    emergencyContact: '',
-    landline: '',
-    motherMobile: '',
-    photo: 'https://randomuser.me/api/portraits/men/75.jpg',
-  },
-  permanentAddress: {
-    address1: 'Village Bannad',
-    address2: '',
-    city: 'Sagar (Madhya Pradesh)',
-    district: 'Sagar',
-    state: 'Madhya Pradesh',
-    country: 'India',
-  },
-  correspondingAddress: {
-    address1: 'Village- Bannad',
-    address2: '',
-    city: 'Bamora (Madhya Pradesh)',
-    district: 'Sagar',
-    state: 'Madhya Pradesh',
-    country: 'India',
-  },
-  payingGuestAddress: {
-    hno: '',
-    colony: '',
-    city: '',
-    district: '',
-    state: '',
-    country: '',
-  },
-};
+import axios from 'axios';
 
 const StudentProfile = () => {
-  const p = profileData.personal;
-  const pa = profileData.permanentAddress;
-  const ca = profileData.correspondingAddress;
-  const pg = profileData.payingGuestAddress;
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [finalized, setFinalized] = useState(false);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get('/api/admin/students/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setProfileData(res.data);
+        setFinalized(res.data.studentProfileFinalized); // or whatever your finalized flag is
+      } catch (err) {
+        setProfileData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+  if (!profileData) return <div>Profile not found.</div>;
+
+  // Map your backend fields to the UI structure here
+  const p = profileData.personal || {};
+  const pa = profileData.permanentAddress || {};
+  const ca = profileData.correspondingAddress || {};
+  const pg = profileData.payingGuestAddress || {};
 
   return (
-    <div className="student-profile-ums">
-      {/* Personal Information Section */}
-      <div className="profile-section-ums">
-        <div className="section-header-ums">Personal Information :</div>
+    <div className="student-profile-card">
+      <h2>Personal Information</h2>
+      <div className="profile-section">
         <div className="profile-table-ums">
           <div className="profile-table-left-ums">
             <div className="profile-row-ums">
@@ -105,79 +87,77 @@ const StudentProfile = () => {
           </div>
         </div>
       </div>
-
-      {/* Address Sections */}
-      <div className="address-sections-ums">
-        <div className="address-section-ums">
-          <div className="section-header-ums">Permanent Address :</div>
-          <div className="address-table-ums">
-            <div className="address-row-ums">
-              <div className="address-label-ums">Address Line 1 :</div>
-              <div className="address-value-ums">{pa.address1}</div>
-              <div className="address-label-ums">Address Line 2 :</div>
-              <div className="address-value-ums">{pa.address2}</div>
-            </div>
-            <div className="address-row-ums">
-              <div className="address-label-ums">Town/City :</div>
-              <div className="address-value-ums">{pa.city}</div>
-              <div className="address-label-ums">District :</div>
-              <div className="address-value-ums">{pa.district}</div>
-            </div>
-            <div className="address-row-ums">
-              <div className="address-label-ums">State/UT :</div>
-              <div className="address-value-ums">{pa.state}</div>
-              <div className="address-label-ums">Country :</div>
-              <div className="address-value-ums">{pa.country}</div>
-            </div>
+      <h2>Permanent Address</h2>
+      <div className="profile-section">
+        <div className="address-table-ums">
+          <div className="address-row-ums">
+            <div className="address-label-ums">Address Line 1 :</div>
+            <div className="address-value-ums">{pa.address1}</div>
+            <div className="address-label-ums">Address Line 2 :</div>
+            <div className="address-value-ums">{pa.address2}</div>
           </div>
-        </div>
-        <div className="address-section-ums">
-          <div className="section-header-ums">Corresponding Address :</div>
-          <div className="address-table-ums">
-            <div className="address-row-ums">
-              <div className="address-label-ums">Address Line 1 :</div>
-              <div className="address-value-ums">{ca.address1}</div>
-              <div className="address-label-ums">Address Line 2 :</div>
-              <div className="address-value-ums">{ca.address2}</div>
-            </div>
-            <div className="address-row-ums">
-              <div className="address-label-ums">Town/City :</div>
-              <div className="address-value-ums">{ca.city}</div>
-              <div className="address-label-ums">District :</div>
-              <div className="address-value-ums">{ca.district}</div>
-            </div>
-            <div className="address-row-ums">
-              <div className="address-label-ums">State/UT :</div>
-              <div className="address-value-ums">{ca.state}</div>
-              <div className="address-label-ums">Country :</div>
-              <div className="address-value-ums">{ca.country}</div>
-            </div>
+          <div className="address-row-ums">
+            <div className="address-label-ums">Town/City :</div>
+            <div className="address-value-ums">{pa.city}</div>
+            <div className="address-label-ums">District :</div>
+            <div className="address-value-ums">{pa.district}</div>
           </div>
-        </div>
-        <div className="address-section-ums">
-          <div className="section-header-ums">Paying Guest Address :</div>
-          <div className="address-table-ums">
-            <div className="address-row-ums">
-              <div className="address-label-ums">HNo-Building :</div>
-              <div className="address-value-ums">{pg.hno}</div>
-              <div className="address-label-ums">Colony :</div>
-              <div className="address-value-ums">{pg.colony}</div>
-            </div>
-            <div className="address-row-ums">
-              <div className="address-label-ums">Town/City :</div>
-              <div className="address-value-ums">{pg.city}</div>
-              <div className="address-label-ums">District :</div>
-              <div className="address-value-ums">{pg.district}</div>
-            </div>
-            <div className="address-row-ums">
-              <div className="address-label-ums">State/UT :</div>
-              <div className="address-value-ums">{pg.state}</div>
-              <div className="address-label-ums">Country :</div>
-              <div className="address-value-ums">{pg.country}</div>
-            </div>
+          <div className="address-row-ums">
+            <div className="address-label-ums">State/UT :</div>
+            <div className="address-value-ums">{pa.state}</div>
+            <div className="address-label-ums">Country :</div>
+            <div className="address-value-ums">{pa.country}</div>
           </div>
         </div>
       </div>
+      <h2>Corresponding Address</h2>
+      <div className="profile-section">
+        <div className="address-table-ums">
+          <div className="address-row-ums">
+            <div className="address-label-ums">Address Line 1 :</div>
+            <div className="address-value-ums">{ca.address1}</div>
+            <div className="address-label-ums">Address Line 2 :</div>
+            <div className="address-value-ums">{ca.address2}</div>
+          </div>
+          <div className="address-row-ums">
+            <div className="address-label-ums">Town/City :</div>
+            <div className="address-value-ums">{ca.city}</div>
+            <div className="address-label-ums">District :</div>
+            <div className="address-value-ums">{ca.district}</div>
+          </div>
+          <div className="address-row-ums">
+            <div className="address-label-ums">State/UT :</div>
+            <div className="address-value-ums">{ca.state}</div>
+            <div className="address-label-ums">Country :</div>
+            <div className="address-value-ums">{ca.country}</div>
+          </div>
+        </div>
+      </div>
+      <h2>Paying Guest Address</h2>
+      <div className="profile-section">
+        <div className="address-table-ums">
+          <div className="address-row-ums">
+            <div className="address-label-ums">HNo-Building :</div>
+            <div className="address-value-ums">{pg.hno}</div>
+            <div className="address-label-ums">Colony :</div>
+            <div className="address-value-ums">{pg.colony}</div>
+          </div>
+          <div className="address-row-ums">
+            <div className="address-label-ums">Town/City :</div>
+            <div className="address-value-ums">{pg.city}</div>
+            <div className="address-label-ums">District :</div>
+            <div className="address-value-ums">{pg.district}</div>
+          </div>
+          <div className="address-row-ums">
+            <div className="address-label-ums">State/UT :</div>
+            <div className="address-value-ums">{pg.state}</div>
+            <div className="address-label-ums">Country :</div>
+            <div className="address-value-ums">{pg.country}</div>
+          </div>
+        </div>
+      </div>
+      {!finalized && <button>Submit</button>}
+      {finalized && <div>Final after submission – No further edits.</div>}
     </div>
   );
 };

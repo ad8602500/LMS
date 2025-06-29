@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import './AdminLayout.css'; // We will create this CSS file next
@@ -6,6 +6,14 @@ import './AdminLayout.css'; // We will create this CSS file next
 const AdminLayout = () => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      enqueueSnackbar('Please login to continue', { variant: 'warning' });
+      navigate('/login');
+    }
+  }, [navigate, enqueueSnackbar]);
 
   // Dummy user data for demonstration, replace with actual user data from context/state
   const user = JSON.parse(localStorage.getItem('user')) || {
@@ -56,6 +64,9 @@ const AdminLayout = () => {
           </Link>
           <Link to="/admin/timetable" className="nav-item">
             <i className="fas fa-calendar-alt"></i>Timetable
+          </Link>
+          <Link to="/admin/messages" className="nav-item">
+            <i className="fas fa-envelope"></i>Messages
           </Link>
           {/* Add more admin specific links here */}
         </nav>

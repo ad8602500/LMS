@@ -1,7 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './StudentDashboard.css';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const StudentDashboard = () => {
+  const navigate = useNavigate();
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    // Fetch messages sent to the student by teachers/admins
+    const fetchMessages = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get('/api/message/received', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMessages(res.data);
+      } catch (err) {
+        setMessages([]);
+      }
+    };
+    fetchMessages();
+  }, []);
+
   return (
     <div className="student-dashboard">
       <div className="dashboard-header">
@@ -30,22 +51,25 @@ const StudentDashboard = () => {
         <div className="dashboard-card messages-card">
           <h2 className="card-title"><i className="fas fa-envelope"></i> My Messages</h2>
           <div className="card-body">
-            <ul>
-              <li>
-                <p><strong>OJT/Internship Attendance</strong> - By Administrator (Jun 17, 2025)</p>
-                <p>Dear Student, Please mark your attendance for the OJT/Internship for the date 17-06-2025. <a href="#" className="click-here-link">Click Here to mark Attendance</a></p>
-              </li>
-              <li>
-                <p><strong>ON CAMPUS Drive - ALPHA INNOVATIONPVT LTD</strong> - By Office of Director DCS (Jun 16, 2025)</p>
-                <p>Dear Student, you are eligible for ON CAMPUS Drive of ALPHA INNOVATIONPVT LTD. Date will be notified later. Check venue through UMS. Register by Jun 18 2025 1:00PM. BEST Wishes, LPU</p>
-              </li>
-              <li>
-                <p><strong>ON CAMPUS Drive - ALPHA INNOVATIONPVT LTD</strong> - By Office of Director DCS (Jun 16, 2025)</p>
-              </li>
-            </ul>
+            {messages.length === 0 ? (
+              <div className="no-messages">No messages from teachers or admin.</div>
+            ) : (
+              <ul className="messages-list">
+                {messages.map((msg) => (
+                  <li key={msg._id} className="message-item">
+                    <div className="message-header">
+                      <span className="sender-name">{msg.sender?.firstName} {msg.sender?.lastName}</span>
+                      <span className="sender-role">({msg.sender?.role})</span>
+                      <span className="message-date">{new Date(msg.timestamp).toLocaleString()}</span>
+                    </div>
+                    <div className="message-content">{msg.content}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
             <div className="card-footer">
-              <span className="event-note">* Messages Sent by Teachers</span>
-              <button className="all-messages-button">All Messages</button>
+              <span className="event-note">* Messages Sent by Teachers/Admin</span>
+              <button className="all-messages-button" onClick={() => navigate('/student/messages')}>All Messages</button>
             </div>
           </div>
         </div>

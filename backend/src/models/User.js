@@ -175,7 +175,18 @@ const userSchema = new mongoose.Schema({
   profileFinalized: {
     type: Boolean,
     default: false
-  }
+  },
+  studentProfileFinalized: {
+    type: Boolean,
+    default: false
+  },
+  category: String,
+  emergencyContact: String,
+  motherMobile: String,
+  fatherMobile: String,
+  landline: String,
+  lpuEmail: String,
+  // ... add other fields as needed ...
 });
 
 // Hash password before saving

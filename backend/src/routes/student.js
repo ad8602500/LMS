@@ -182,4 +182,33 @@ router.delete('/:id', auth, checkRole('ADMIN'), async (req, res) => {
   }
 });
 
+// Get current student's profile
+router.get('/me', auth, checkRole('STUDENT'), async (req, res) => {
+  try {
+    const student = await User.findOne({ _id: req.user._id, role: 'STUDENT' }).select('-password');
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    res.json(student);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update current student's profile (only if not finalized)
+router.put('/me', auth, checkRole('STUDENT'), async (req, res) => {
+  try {
+    const student = await User.findOne({ _id: req.user._id, role: 'STUDENT' });
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    if (student.studentProfileFinalized) {
+      return res.status(403).json({ message: 'Profile already finalized. No further edits allowed.' });
+    }
+    // Save all fields (add validation as needed)
+    Object.assign(student, req.body);
+    student.studentProfileFinalized = true;
+    await student.save();
+    res.json({ message: 'Profile updated and finalized', student });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 export default router; 

@@ -37,9 +37,16 @@ const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const { enqueueSnackbar } = useSnackbar();
+  const [msgRecipientType, setMsgRecipientType] = useState('all-teachers');
+  const [msgTargetId, setMsgTargetId] = useState('');
+  const [msgContent, setMsgContent] = useState('');
+  const [msgStatus, setMsgStatus] = useState('');
+  const [msgLoading, setMsgLoading] = useState(false);
+  const [myMessages, setMyMessages] = useState([]);
 
   useEffect(() => {
     fetchStats();
+    fetchMyMessages();
   }, []);
 
   const fetchStats = async () => {
@@ -62,6 +69,20 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchMyMessages = async () => {
+    setMsgLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get('/api/message/received', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMyMessages(res.data);
+    } catch (err) {
+      setMyMessages([]);
+    }
+    setMsgLoading(false);
   };
 
   const statCards = [
@@ -96,6 +117,54 @@ const AdminDashboard = () => {
       color: 'linear-gradient(135deg, #fc466b 0%, #3f5efb 100%)',
     },
   ];
+
+  const handleAdminMessageSend = async (e) => {
+    e.preventDefault();
+    setMsgStatus('');
+    if (!msgContent.trim()) {
+      setMsgStatus('Please enter a message.');
+      return;
+    }
+    if ((msgRecipientType === 'teacher' || msgRecipientType === 'student') && !msgTargetId.trim()) {
+      setMsgStatus('Please enter the ID or name.');
+      return;
+    }
+    setMsgLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      let endpoint = '';
+      let payload = { content: msgContent };
+      switch (msgRecipientType) {
+        case 'all-teachers':
+          endpoint = '/api/message/admin-to-all-teachers';
+          break;
+        case 'all-students':
+          endpoint = '/api/message/admin-to-all-students';
+          break;
+        case 'teacher':
+          endpoint = '/api/message/admin-to-teacher';
+          payload = { content: msgContent, teacherId: msgTargetId.trim() };
+          break;
+        case 'student':
+          endpoint = '/api/message/admin-to-student';
+          payload = { content: msgContent, studentId: msgTargetId.trim() };
+          break;
+        default:
+          setMsgStatus('Invalid recipient type.');
+          setMsgLoading(false);
+          return;
+      }
+      await axios.post(endpoint, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMsgStatus('Message sent!');
+      setMsgContent('');
+      setMsgTargetId('');
+    } catch (err) {
+      setMsgStatus('Failed to send message.');
+    }
+    setMsgLoading(false);
+  };
 
   if (loading) {
     return (
@@ -191,6 +260,30 @@ const AdminDashboard = () => {
           </div>
           <div className="card-footer">
             <button className="view-more-button">Go to Attendance</button>
+          </div>
+        </div>
+
+        {/* My Messages Card */}
+        <div className="dashboard-card my-messages-card">
+          <h2 className="card-title"><i className="fas fa-inbox"></i> My Messages</h2>
+          <div className="card-body">
+            {msgLoading ? (
+              <div>Loading messages...</div>
+            ) : myMessages.length === 0 ? (
+              <div>No messages received.</div>
+            ) : (
+              <div className="my-messages-list">
+                {myMessages.map((msg) => (
+                  <div className="my-message-item" key={msg._id}>
+                    <div className="my-message-meta">
+                      <span className="my-message-sender">{msg.sender?.firstName} {msg.sender?.lastName}</span>
+                      <span className="my-message-date">{new Date(msg.timestamp).toLocaleString()}</span>
+                    </div>
+                    <div className="my-message-content">{msg.content}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
