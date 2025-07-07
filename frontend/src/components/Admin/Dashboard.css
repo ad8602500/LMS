@@ -1,46 +1,117 @@
 /* No longer needed as Material-UI handles layout and card styling */
 
 .admin-dashboard {
-  padding: 20px;
-  background-color: #f4f7f6;
-  min-height: calc(100vh - 60px); /* Adjust based on your header/footer height */
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  min-height: calc(100vh - 60px);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.admin-dashboard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 70%, 0 100%);
+  z-index: 0;
 }
 
 .dashboard-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  position: relative;
+  z-index: 1;
+  margin-top: 1rem;
 }
 
 .dashboard-card {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  min-height: 150px; /* Adjust as needed */
+  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 4px 15px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s ease;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.dashboard-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #4a90e2, #357abd, #2ecc71, #f39c12);
+  border-radius: 20px 20px 0 0;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-card:nth-child(1)::before {
+  background: linear-gradient(90deg, #4a90e2, #357abd);
+}
+
+.dashboard-card:nth-child(2)::before {
+  background: linear-gradient(90deg, #2ecc71, #27ae60);
+}
+
+.dashboard-card:nth-child(3)::before {
+  background: linear-gradient(90deg, #f39c12, #e67e22);
+}
+
+.dashboard-card:nth-child(4)::before {
+  background: linear-gradient(90deg, #e74c3c, #c0392b);
 }
 
 .card-title {
-  color: #ff9800; /* Orange color for titles */
-  margin-bottom: 15px;
-  font-size: 1.2em;
-  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  font-size: 1.4rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 1rem;
+  position: relative;
+}
+
+.card-title::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, #4a90e2, #357abd);
+  border-radius: 2px;
 }
 
 .card-title i {
-  font-size: 1.4em;
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, #4a90e2, #357abd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 4px rgba(74, 144, 226, 0.3));
 }
 
 .card-body {
   flex-grow: 1;
-  font-size: 0.95em;
+  font-size: 1rem;
   color: #555;
-  line-height: 1.5;
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
 }
 
 .card-body ul {
@@ -50,38 +121,366 @@
 }
 
 .card-body ul li {
-  margin-bottom: 8px;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+  border-radius: 12px;
+  border-left: 4px solid #4a90e2;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.card-body ul li:hover {
+  transform: translateX(5px);
+  background: linear-gradient(145deg, #e3f2fd, #bbdefb);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+}
+
+.card-body ul li::before {
+  content: '→';
+  position: absolute;
+  right: 1rem;
+  color: #4a90e2;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card-body ul li:hover::before {
+  opacity: 1;
 }
 
 .card-footer {
   display: flex;
-  justify-content: flex-end; /* Align buttons to the right */
-  margin-top: 15px;
-  padding-top: 10px;
-  border-top: 1px solid #eee;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e9ecef;
+  position: relative;
 }
 
-.view-more-button, .all-messages-button {
-  background-color: #007bff; /* Blue button */
+.card-footer::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, #4a90e2, #357abd);
+  border-radius: 1px;
+}
+
+.view-more-button, 
+.all-messages-button {
+  background: linear-gradient(135deg, #4a90e2, #357abd);
   color: #fff;
   border: none;
-  padding: 8px 15px;
-  border-radius: 5px;
+  padding: 1rem 2rem;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 0.9em;
-  transition: background-color 0.3s ease;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
 }
 
-.view-more-button:hover, .all-messages-button:hover {
-  background-color: #0056b3;
+.view-more-button::before,
+.all-messages-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.view-more-button:hover::before,
+.all-messages-button:hover::before {
+  left: 100%;
+}
+
+.view-more-button:hover, 
+.all-messages-button:hover {
+  background: linear-gradient(135deg, #357abd, #2c5aa0);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+}
+
+.view-more-button:active,
+.all-messages-button:active {
+  transform: translateY(0);
 }
 
 .dashboard-link {
-  color: #007bff;
+  color: #4a90e2;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.dashboard-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #4a90e2, #357abd);
+  transition: width 0.3s ease;
 }
 
 .dashboard-link:hover {
-  text-decoration: underline;
+  color: #357abd;
+}
+
+.dashboard-link:hover::after {
+  width: 100%;
+}
+
+/* Loading animation */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #4a90e2;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.loading::after {
+  content: '';
+  width: 20px;
+  height: 20px;
+  margin-left: 10px;
+  border: 2px solid #e9ecef;
+  border-top: 2px solid #4a90e2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .admin-dashboard {
+    padding: 1rem;
+  }
+
+  .dashboard-content {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .dashboard-card {
+    padding: 1.5rem;
+    min-height: 180px;
+  }
+
+  .card-title {
+    font-size: 1.2rem;
+  }
+
+  .card-title i {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-dashboard {
+    padding: 0.5rem;
+  }
+
+  .dashboard-card {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+
+  .view-more-button,
+  .all-messages-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .admin-dashboard {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  }
+
+  .admin-dashboard::before {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+  }
+
+  .dashboard-card {
+    background: linear-gradient(145deg, #34495e, #2c3e50);
+    color: #ecf0f1;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .card-title {
+    color: #ecf0f1;
+  }
+
+  .card-body {
+    color: #bdc3c7;
+  }
+
+  .card-body ul li {
+    background: linear-gradient(145deg, #2c3e50, #34495e);
+    border-left-color: #4a90e2;
+  }
+
+  .card-body ul li:hover {
+    background: linear-gradient(145deg, #1e3a5f, #2c5aa0);
+  }
+
+  .card-footer {
+    border-top-color: #4a5568;
+  }
+}
+
+.my-messages-block {
+  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(44, 62, 80, 0.08);
+  padding: 2rem 1.5rem;
+  margin-bottom: 2rem;
+  position: relative;
+  border: 1px solid rgba(255, 152, 0, 0.15);
+  min-width: 280px;
+  max-width: 400px;
+}
+
+.my-messages-block::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ff9800, #f57c00);
+  border-radius: 16px 16px 0 0;
+}
+
+.my-messages-title {
+  color: #ff9800;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  position: relative;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #ffe0b2;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.my-messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.my-message-item {
+  background: linear-gradient(145deg, #f8f9fa, #fff3e0);
+  border-radius: 10px;
+  padding: 1rem 1rem 0.75rem 1rem;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.07);
+  transition: box-shadow 0.3s, transform 0.3s;
+  border-left: 4px solid #ff9800;
+  position: relative;
+}
+
+.my-message-item:hover {
+  box-shadow: 0 6px 18px rgba(255, 152, 0, 0.15);
+  transform: translateX(6px) scale(1.02);
+}
+
+.my-message-meta {
+  font-size: 0.97rem;
+  font-weight: 600;
+  color: #ff9800;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.my-message-date {
+  font-size: 0.85rem;
+  color: #bdbdbd;
+  font-weight: 500;
+}
+
+.my-message-content {
+  color: #444;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  margin-left: 0.5rem;
+  word-break: break-word;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .my-messages-block {
+    padding: 1.25rem 0.75rem;
+    max-width: 100%;
+  }
+  .my-messages-list {
+    max-height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .my-messages-block {
+    padding: 0.75rem 0.25rem;
+    border-radius: 10px;
+  }
+  .my-messages-title {
+    font-size: 1.1rem;
+  }
+  .my-message-item {
+    padding: 0.75rem 0.5rem 0.5rem 0.5rem;
+    border-radius: 7px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .my-messages-block {
+    background: linear-gradient(145deg, #2c3e50, #34495e);
+    color: #ecf0f1;
+    border-color: rgba(255, 152, 0, 0.08);
+  }
+  .my-messages-title {
+    background: linear-gradient(135deg, #ffe082, #ff9800);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .my-message-item {
+    background: linear-gradient(145deg, #34495e, #2c3e50);
+    color: #ecf0f1;
+    border-left-color: #ff9800;
+  }
+  .my-message-meta {
+    color: #ffe082;
+  }
+  .my-message-content {
+    color: #ffe0b2;
+  }
 } 

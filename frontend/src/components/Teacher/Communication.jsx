@@ -6,17 +6,61 @@ const Communication = () => {
   const user = JSON.parse(localStorage.getItem('user'));
   const [receivedMessages, setReceivedMessages] = useState([]);
   const [recipientType, setRecipientType] = useState('admin');
+  const [classId, setClassId] = useState('');
   const [studentId, setStudentId] = useState('');
   const [messageContent, setMessageContent] = useState('');
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
+  const [classes, setClasses] = useState([]);
+  const [students, setStudents] = useState([]);
 
+  // Fetch teacher's classes on mount
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get('http://localhost:5000/api/class/teacher/classes', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setClasses(res.data);
+      } catch (err) {
+        setClasses([]);
+      }
+    };
+    if (user.role === 'TEACHER') {
+      fetchClasses();
+    }
+  }, [user.role]);
+
+  // Fetch students when classId changes and recipientType is student
+  useEffect(() => {
+    const fetchStudents = async () => {
+      if (!classId) {
+        setStudents([]);
+        return;
+      }
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`http://localhost:5000/api/class/${classId}/students`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setStudents(res.data);
+      } catch (err) {
+        setStudents([]);
+      }
+    };
+    if (recipientType === 'student' && classId) {
+      fetchStudents();
+    }
+  }, [recipientType, classId]);
+
+  // Fetch received messages
   useEffect(() => {
     if (user.role === 'TEACHER') {
       const fetchMessages = async () => {
         try {
           const token = localStorage.getItem('token');
-          const res = await axios.get('/api/message/received', {
+          const res = await axios.get('http://localhost:5000/api/message/teacher/received', {
             headers: { Authorization: `Bearer ${token}` }
           });
           setReceivedMessages(res.data);
@@ -35,8 +79,12 @@ const Communication = () => {
       setStatus('Please enter a message.');
       return;
     }
-    if (recipientType === 'student' && !studentId.trim()) {
-      setStatus('Please enter student ID or name.');
+    if (recipientType === 'class' && !classId) {
+      setStatus('Please select a class.');
+      return;
+    }
+    if (recipientType === 'student' && (!classId || !studentId)) {
+      setStatus('Please select a class and student.');
       return;
     }
     setLoading(true);
@@ -45,26 +93,28 @@ const Communication = () => {
       let endpoint = '';
       let payload = { content: messageContent };
       switch (recipientType) {
-        case 'all-students':
-          endpoint = '/api/message/teacher-to-all-students';
+        case 'class':
+          endpoint = '/api/message/teacher-to-class';
+          payload = { content: messageContent, classId };
           break;
         case 'admin':
           endpoint = '/api/message/teacher-to-admin';
           break;
         case 'student':
           endpoint = '/api/message/teacher-to-student';
-          payload = { content: messageContent, studentId: studentId.trim() };
+          payload = { content: messageContent, studentId };
           break;
         default:
           setStatus('Invalid recipient type.');
           setLoading(false);
           return;
       }
-      await axios.post(endpoint, payload, {
+      await axios.post(`http://localhost:5000${endpoint}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStatus('Message sent!');
       setMessageContent('');
+      setClassId('');
       setStudentId('');
     } catch (err) {
       setStatus('Failed to send message.');
@@ -82,25 +132,70 @@ const Communication = () => {
             <select
               id="recipientType"
               value={recipientType}
-              onChange={e => setRecipientType(e.target.value)}
+              onChange={e => {
+                setRecipientType(e.target.value);
+                setClassId('');
+                setStudentId('');
+              }}
             >
               <option value="admin">Admin</option>
-              <option value="all-students">All Students</option>
-              <option value="student">Student</option>
+              <option value="class">Class (All Students in Class)</option>
+              <option value="student">Student (Select One)</option>
             </select>
           </div>
-          {recipientType === 'student' && (
+          {recipientType === 'class' && (
             <div className="comm-form-group">
-              <label htmlFor="studentId">Student ID or Name</label>
-              <input
-                type="text"
-                id="studentId"
-                value={studentId}
-                onChange={e => setStudentId(e.target.value)}
-                placeholder="Enter student ID or name..."
+              <label htmlFor="classId">Select Class</label>
+              <select
+                id="classId"
+                value={classId}
+                onChange={e => setClassId(e.target.value)}
                 required
-              />
+              >
+                <option value="">-- Select Class --</option>
+                {classes.map(cls => (
+                  <option key={cls._id} value={cls._id}>
+                    {cls.name} {cls.section ? `(${cls.section})` : ''}
+                  </option>
+                ))}
+              </select>
             </div>
+          )}
+          {recipientType === 'student' && (
+            <>
+              <div className="comm-form-group">
+                <label htmlFor="classId">Select Class</label>
+                <select
+                  id="classId"
+                  value={classId}
+                  onChange={e => setClassId(e.target.value)}
+                  required
+                >
+                  <option value="">-- Select Class --</option>
+                  {classes.map(cls => (
+                    <option key={cls._id} value={cls._id}>
+                      {cls.name} {cls.section ? `(${cls.section})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="comm-form-group">
+                <label htmlFor="studentId">Select Student</label>
+                <select
+                  id="studentId"
+                  value={studentId}
+                  onChange={e => setStudentId(e.target.value)}
+                  required
+                >
+                  <option value="">-- Select Student --</option>
+                  {students.map(student => (
+                    <option key={student._id} value={student._id}>
+                      {student.firstName} {student.lastName} ({student.userId})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
           )}
           <div className="comm-form-group">
             <label htmlFor="messageContent">Message</label>

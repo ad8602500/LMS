@@ -31,7 +31,12 @@ router.post('/student-to-teacher', auth,checkRole('STUDENT'), async (req, res) =
 
 // Teacher sends message to a specific student
 router.post('/teacher-to-student', auth, checkRole('TEACHER'), async (req, res) => {
+  try {
     const { content, studentId } = req.body;
+    
+    if (!content || !studentId) {
+      return res.status(400).json({ message: 'Content and studentId are required' });
+    }
   
     const student = await User.findOne({ _id: studentId, role: 'STUDENT' });
     if (!student) return res.status(404).json({ message: 'Student not found' });
@@ -43,13 +48,25 @@ router.post('/teacher-to-student', auth, checkRole('TEACHER'), async (req, res) 
     });
   
     res.status(201).json({ message: 'Message sent to student', data: message });
-  });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to send message', error: error.message });
+  }
+});
   
-  // Teacher sends message to all students in their class
-  router.post('/teacher-to-class', auth, checkRole('TEACHER'), async (req, res) => {
+// Teacher sends message to all students in their class
+router.post('/teacher-to-class', auth, checkRole('TEACHER'), async (req, res) => {
+  try {
     const { content } = req.body;
+    
+    if (!content) {
+      return res.status(400).json({ message: 'Content is required' });
+    }
   
     const students = await User.find({ classId: req.user.classId, role: 'STUDENT' });
+    
+    if (students.length === 0) {
+      return res.status(404).json({ message: 'No students found in your class' });
+    }
   
     const messages = await Promise.all(
       students.map(student =>
@@ -61,10 +78,13 @@ router.post('/teacher-to-student', auth, checkRole('TEACHER'), async (req, res) 
       )
     );
     res.status(201).json({ message: 'Broadcast sent to class', count: messages.length });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to send broadcast', error: error.message });
+  }
 });
 
 // Get all messages received by the teacher
-router.get('/received', auth, checkRole('TEACHER'), async (req, res) => {
+router.get('/teacher/received', auth, checkRole('TEACHER'), async (req, res) => {
   try {
     const messages = await Message.find({ receiver: req.user._id })
       .populate('sender', 'firstName lastName role')
@@ -93,7 +113,7 @@ router.post('/teacher-to-admin', auth, checkRole('TEACHER'), async (req, res) =>
 });
 
 // Get all messages received by the student
-router.get('/received', auth, checkRole('STUDENT'), async (req, res) => {
+router.get('/student/received', auth, checkRole('STUDENT'), async (req, res) => {
   try {
     const messages = await Message.find({ receiver: req.user._id })
       .populate('sender', 'firstName lastName role')
@@ -173,7 +193,7 @@ router.post('/admin-to-student', auth, checkRole('ADMIN'), async (req, res) => {
   res.status(201).json({ message: 'Message sent to student', data: message });
 });
 
-router.get('/received', auth, checkRole('ADMIN'), async (req, res) => {
+router.get('/admin/received', auth, checkRole('ADMIN'), async (req, res) => {
   try {
     const messages = await Message.find({ receiver: req.user._id })
       .populate('sender', 'firstName lastName role')
@@ -182,6 +202,26 @@ router.get('/received', auth, checkRole('ADMIN'), async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch messages', error: error.message });
   }
+});
+
+// Student sends message to admin
+router.post('/student-to-admin', auth, checkRole('STUDENT'), async (req, res) => {
+    try {
+        const { content } = req.body;
+        const student = await User.findById(req.user._id);
+        const admin = await User.findOne({ schoolId: student.schoolId, role: 'ADMIN' });
+        if (!admin) {
+            return res.status(404).json({ message: 'Admin not found' });
+        }
+        const message = await Message.create({
+            sender: student._id,
+            receiver: admin._id,
+            content
+        });
+        res.status(201).json({ message: 'Message sent to admin' });
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to send message to admin', error: error.message });
+    }
 });
 
 export default router;

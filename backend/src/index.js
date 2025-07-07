@@ -31,6 +31,10 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: '../.env' });
 
 const app = express();
+app.use(cors({
+  origin: "http://localhost:5173", // frontend URL
+  credentials: true,               // allow cookies/auth headers
+}));
 
 // Middleware
 const allowedOrigins = [
@@ -40,12 +44,11 @@ const allowedOrigins = [
 
 // Add cookie parser BEFORE cors middleware
 app.use(cookieParser());
-app.use('/api/message', messageRoutes);
+
 
 // Configure CORS with specific options
-app.use(cors({
-  origin: 'http://localhost:5173'
-}));
+
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -80,6 +83,7 @@ app.use('/api/teacher/dashboard', teacherDashboardRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/fees', feesRoutes);
 app.use('/api/student', studentRoutes);
+app.use('/api/message', messageRoutes);
 
 // Add this to your index.js for testing
 app.get('/api/test-auth', (req, res) => {

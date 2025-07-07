@@ -12,7 +12,7 @@ const StudentDashboard = () => {
     const fetchMessages = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('/api/message/received', {
+        const res = await axios.get('http://localhost:5000/api/message/student/received', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setMessages(res.data);

@@ -2,22 +2,66 @@
   display: flex;
   height: 100vh;
   font-family: 'Roboto', sans-serif;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-layout::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 60%, 0 100%);
+  z-index: 0;
 }
 
 .admin-sidebar {
-  width: 250px;
-  background-color: #ff9800;
+  width: 280px;
+  background: linear-gradient(180deg, #ff9800 0%, #f57c00 100%);
   color: #fff;
   display: flex;
   flex-direction: column;
-  padding: 20px 0;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  position: relative;
+  z-index: 10;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.admin-sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ff9800, #f57c00);
+  z-index: 1;
 }
 
 .sidebar-logo {
-  padding: 15px 20px;
+  padding: 2rem 1.5rem;
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 2rem;
+  position: relative;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sidebar-logo::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, #fff, transparent);
+  border-radius: 1px;
 }
 
 .sidebar-logo a {
@@ -28,122 +72,435 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.sidebar-logo a:hover {
+  transform: scale(1.05);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .ums-logo {
-  height: 40px;
-  margin-right: 10px;
+  height: 45px;
+  margin-right: 12px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: all 0.3s ease;
+}
+
+.sidebar-logo:hover .ums-logo {
+  transform: scale(1.1);
 }
 
 .logo-text {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: 0.25rem;
 }
 
 .ums-abbr {
-  font-size: 1.8em;
+  font-size: 2rem;
   line-height: 1;
+  font-weight: 800;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #fff, #f0f0f0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .ums-full {
-  font-size: 0.7em;
+  font-size: 0.75rem;
   line-height: 1;
-  opacity: 0.8;
+  opacity: 0.9;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
 .admin-nav-links {
   flex-grow: 1;
+  padding: 0 1rem;
 }
 
 .admin-nav-links .nav-item {
   display: flex;
   align-items: center;
-  padding: 15px 20px;
+  padding: 1rem 1.5rem;
   color: #fff;
   text-decoration: none;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  margin-bottom: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.admin-nav-links .nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.admin-nav-links .nav-item:hover::before {
+  left: 100%;
 }
 
 .admin-nav-links .nav-item:hover {
-  background-color: #e68a00;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+  transform: translateX(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.admin-nav-links .nav-item.active {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-left: 4px solid #fff;
 }
 
 .admin-nav-links .nav-item i {
-  margin-right: 10px;
-  font-size: 1.2em;
+  margin-right: 12px;
+  font-size: 1.3em;
+  width: 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.admin-nav-links .nav-item:hover i {
+  transform: scale(1.2);
 }
 
 .admin-main-content {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  background-color: #f8f9fa;
+  background: transparent;
+  position: relative;
+  z-index: 1;
 }
 
 .admin-main-header {
-  background-color: #fff;
-  padding: 15px 30px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  padding: 1rem 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 60px;
+  min-height: 70px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.8);
+  position: relative;
+}
+
+.admin-main-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ff9800, #f57c00);
+  border-radius: 0 0 3px 3px;
 }
 
 .header-right {
   display: flex;
   align-items: center;
+  gap: 1.5rem;
 }
 
 .profile-section {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.profile-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
 .profile-details {
   text-align: right;
-  color: #333;
+  color: #2c3e50;
 }
 
 .profile-details .user-name {
-  font-weight: bold;
+  font-weight: 700;
   margin: 0;
-  font-size: 1.1em;
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, #2c3e50, #34495e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .profile-details .user-info {
-  font-size: 0.85em;
-  color: #666;
+  font-size: 0.85rem;
+  color: #6c757d;
   margin: 2px 0;
+  font-weight: 500;
 }
 
 .profile-pic {
-  width: 45px;
-  height: 45px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #ddd;
+  border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.profile-pic:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 .sign-out-button {
-  background-color: #dc3545;
+  background: linear-gradient(135deg, #dc3545, #c82333);
   color: #fff;
   border: none;
-  padding: 8px 15px;
-  border-radius: 5px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 0.9em;
-  transition: background-color 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.sign-out-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.3s ease;
+}
+
+.sign-out-button:hover::before {
+  left: 100%;
 }
 
 .sign-out-button:hover {
-  background-color: #c82333;
+  background: linear-gradient(135deg, #c82333, #a71e2a);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+}
+
+.sign-out-button:active {
+  transform: translateY(0);
 }
 
 .admin-content-area {
   flex-grow: 1;
-  padding: 20px;
+  padding: 2rem;
   overflow-y: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Custom scrollbar for content area */
+.admin-content-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-content-area::-webkit-scrollbar-track {
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+  border-radius: 4px;
+}
+
+.admin-content-area::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.admin-content-area::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #f57c00, #e65100);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+    height: auto;
+    min-height: 60px;
+    flex-direction: row;
+    align-items: center;
+    padding: 0.5rem 1rem;
+  }
+
+  .sidebar-logo {
+    padding: 0.5rem;
+    margin-bottom: 0;
+    margin-right: 1rem;
+  }
+
+  .ums-abbr {
+    font-size: 1.5rem;
+  }
+
+  .ums-full {
+    font-size: 0.6rem;
+  }
+
+  .admin-nav-links {
+    display: flex;
+    overflow-x: auto;
+    padding: 0;
+    gap: 0.5rem;
+  }
+
+  .admin-nav-links .nav-item {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0;
+    white-space: nowrap;
+    min-width: fit-content;
+  }
+
+  .admin-nav-links .nav-item:hover {
+    transform: translateY(-2px);
+  }
+
+  .admin-main-header {
+    padding: 0.75rem 1rem;
+    min-height: 60px;
+  }
+
+  .header-right {
+    gap: 1rem;
+  }
+
+  .profile-section {
+    padding: 0.5rem 1rem;
+  }
+
+  .profile-details .user-name {
+    font-size: 1rem;
+  }
+
+  .profile-pic {
+    width: 40px;
+    height: 40px;
+  }
+
+  .sign-out-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .admin-content-area {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-sidebar {
+    padding: 0.5rem;
+  }
+
+  .sidebar-logo {
+    padding: 0.25rem;
+  }
+
+  .ums-logo {
+    height: 35px;
+  }
+
+  .ums-abbr {
+    font-size: 1.2rem;
+  }
+
+  .ums-full {
+    font-size: 0.5rem;
+  }
+
+  .admin-nav-links .nav-item {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .admin-nav-links .nav-item i {
+    font-size: 1.1em;
+    margin-right: 8px;
+  }
+
+  .profile-section {
+    padding: 0.5rem;
+  }
+
+  .profile-details .user-name {
+    font-size: 0.9rem;
+  }
+
+  .profile-details .user-info {
+    font-size: 0.75rem;
+  }
+
+  .profile-pic {
+    width: 35px;
+    height: 35px;
+  }
+
+  .sign-out-button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .admin-layout {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  }
+
+  .admin-layout::before {
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+  }
+
+  .admin-sidebar {
+    background: linear-gradient(180deg, #e67e22 0%, #d35400 100%);
+  }
+
+  .admin-main-header {
+    background: linear-gradient(145deg, #34495e, #2c3e50);
+    color: #ecf0f1;
+  }
+
+  .profile-section {
+    background: linear-gradient(145deg, #2c3e50, #34495e);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .profile-details .user-name {
+    background: linear-gradient(135deg, #ecf0f1, #bdc3c7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .profile-details .user-info {
+    color: #bdc3c7;
+  }
 } 

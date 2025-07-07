@@ -236,7 +236,6 @@ const Students = () => {
             <tr>
               <th>Name</th>
               <th>Email</th>
-              <th>Phone</th>
               <th>Class</th>
               <th>Section</th>
               <th>Roll Number</th>
@@ -251,7 +250,6 @@ const Students = () => {
               <tr key={student._id}>
                 <td>{`${student.firstName} ${student.lastName}`}</td>
                 <td>{student.email}</td>
-                <td>{student.phone}</td>
                 <td>{classes.find(cls => cls._id === student.classId)?.name || 'N/A'}</td>
                 <td>{student.section}</td>
                 <td>{student.rollNo}</td>

@@ -75,7 +75,7 @@ const AdminDashboard = () => {
     setMsgLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('/api/message/received', {
+      const res = await axios.get('http://localhost:5000/api/message/admin/received', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMyMessages(res.data);

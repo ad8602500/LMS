@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import '../Teacher/Communication.css';
+import './Messages.css';
 
 const AdminMessages = () => {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -42,7 +42,7 @@ const AdminMessages = () => {
       const fetchMessages = async () => {
         try {
           const token = localStorage.getItem('token');
-          const res = await axios.get('/api/message/received', {
+          const res = await axios.get('http://localhost:5000/api/message/admin/received', {
             headers: { Authorization: `Bearer ${token}` }
           });
           setReceivedMessages(res.data);
@@ -98,7 +98,7 @@ const AdminMessages = () => {
           setLoading(false);
           return;
       }
-      await axios.post('http://localhost:5000/api/message/admin-to-teacher', payload, {
+      await axios.post(`http://localhost:5000${endpoint}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStatus('Message sent!');
