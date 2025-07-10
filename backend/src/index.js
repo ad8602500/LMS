@@ -79,11 +79,13 @@ app.use('/api/admin/students', studentRoutes);
 app.use('/api/admin/classes', classRoutes);
 app.use('/api/admin/timetable', timetableRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/teacher/dashboard', teacherDashboardRoutes);
+app.use('/api/teacherDashboard', teacherDashboardRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/fees', feesRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/message', messageRoutes);
+app.use('/api/teacher', teacherRoutes);
+
 
 // Add this to your index.js for testing
 app.get('/api/test-auth', (req, res) => {
@@ -103,26 +105,4 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-});
-
-const router = express.Router();
-
-router.get('/teacher/schedule', auth, checkRole(['TEACHER']), async (req, res) => {
-  try {
-    const teacherId = req.user._id;
-    const entries = await Timetable.find({ teacherId });
-
-    // Group by day
-    const grouped = {};
-    for (const entry of entries) {
-      if (!grouped[entry.day]) grouped[entry.day] = [];
-      grouped[entry.day].push(entry);
-    }
-
-    res.json({ timetable: grouped });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-export default router; 
+}); 

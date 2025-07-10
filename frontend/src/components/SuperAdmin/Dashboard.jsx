@@ -50,8 +50,16 @@ const SuperAdminDashboard = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showSchoolForm, setShowSchoolForm] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
-  const [view, setView] = useState('dashboard'); // 'dashboard' or 'schools'
+  const [view, setView] = useState('dashboard'); // 'dashboard' or 'schools' or 'settings'
   const { enqueueSnackbar } = useSnackbar();
+  const [settings, setSettings] = useState({
+    name: 'Aditya Admin',
+    email: 'aditya@admin.com',
+    darkMode: false,
+    password: '',
+    newPassword: '',
+    confirmNewPassword: '',
+  });
 
   useEffect(() => {
     fetchStats();
@@ -230,7 +238,7 @@ const SuperAdminDashboard = () => {
           <a href="#" className={view === 'dashboard' ? 'active' : ''} onClick={() => setView('dashboard')}>🏠 Dashboard</a>
           <a href="#" className={view === 'schools' ? 'active' : ''} onClick={() => setView('schools')}>🏫 Schools</a>
           <a href="#">👤 Users</a>
-          <a href="#">⚙️ Settings</a>
+          <a href="#" onClick={() => navigate('/super-admin/setting')}>⚙️ Settings</a>
         </nav>
         <div className="sidebar-footer">Logged in as: <b>Super Admin</b></div>
       </aside>
@@ -239,7 +247,7 @@ const SuperAdminDashboard = () => {
       <main className="dashboard-main">
         {/* Header */}
         <div className="dashboard-header">
-          <div className="title">{view === 'dashboard' ? 'Dashboard' : 'Schools'}</div>
+          <div className="title">{view === 'dashboard' ? 'Dashboard' : view === 'schools' ? 'Schools' : ''}</div>
           <div className="date-picker">October 13, 2020 - November 11, 2020</div>
         </div>
 
@@ -365,6 +373,7 @@ const SuperAdminDashboard = () => {
             </div>
           </div>
         )}
+
         <SchoolForm
           open={showSchoolForm}
           onClose={() => setShowSchoolForm(false)}

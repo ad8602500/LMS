@@ -28,6 +28,7 @@ import StudentTimetable from './components/Student/StudentTimetable';
 import StudentAttendance from './components/Student/StudentAttendance';
 import MessagingPanel from './components/Student/MessagingPanel';
 import AdminMessages from './components/Admin/Messages';
+import Setting from './components/SuperAdmin/Setting';
 import './App.css';
 import { useState } from 'react';
 
@@ -147,6 +148,14 @@ const App = () => {
               element={
                 <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
                   <SuperAdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/setting"
+              element={
+                <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+                  <Setting />
                 </ProtectedRoute>
               }
             />

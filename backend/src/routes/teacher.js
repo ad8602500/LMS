@@ -63,6 +63,8 @@ router.get('/', auth, checkRole('ADMIN'), async (req, res) => {
   }
 });
 
+
+
 // Add a new teacher
 router.post('/', auth, checkRole('ADMIN'), upload.single('image'), async (req, res) => {
   try {

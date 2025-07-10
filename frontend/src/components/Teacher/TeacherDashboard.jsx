@@ -2,33 +2,69 @@ import React, { useEffect, useState } from 'react';
 import './TeacherDashboard.css';
 import axios from 'axios';
 
+const POLL_INTERVAL = 30000; // 30 seconds
+
 const TeacherDashboard = () => {
+  const [stats, setStats] = useState(null);
   const [classes, setClasses] = useState([]);
-  const [selectedClass, setSelectedClass] = useState('');
-  const [students, setStudents] = useState([]);
-  const [attendance, setAttendance] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const user = JSON.parse(localStorage.getItem('user'));
 
-  const fetchClasses = async () => {
+  // Mock data for cards without backend endpoints
+  const mockAssignments = [
+    { title: 'Math Homework - Class 10A', due: '2024-07-15' },
+    { title: 'Physics Lab Report - Class 11B', due: '2024-07-18' },
+  ];
+  const mockAttendance = {
+    summary: "Today's attendance marked for 3/5 classes.",
+    upcoming: 'Upcoming attendance to be marked for Class 9C.'
+  };
+  const mockAnnouncements = [
+    'Parent-Teacher Meeting scheduled for Aug 5th.',
+    'Professional development workshop on July 25th.'
+  ];
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    setError(null);
+    const token = localStorage.getItem('token');
     try {
-      const token = localStorage.getItem('token');
-      let url = 'http://localhost:5000/api/admin/classes';
-      if (user?.role === 'TEACHER') {
-        url = 'http://localhost:5000/api/teacher/classes';
-      }
-      const response = await axios.get(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      // Fetch dashboard stats
+      const statsRes = await axios.get('http://localhost:5000/api/teacherDashboard/stats', {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setClasses(response.data);
-    } catch (error) {
-      // handle error
+      setStats(statsRes.data);
+      // Fetch classes
+      const classesRes = await axios.get('http://localhost:5000/api/teacherDashboard/classes', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setClasses(classesRes.data);
+      // Fetch recent messages
+      const messagesRes = await axios.get('http://localhost:5000/api/message/teacher/received', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMessages(messagesRes.data.slice(0, 5)); // Show only 5 recent messages
+    } catch (err) {
+      setError('Failed to load dashboard data.');
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchClasses();
+    fetchDashboardData();
+    const interval = setInterval(fetchDashboardData, POLL_INTERVAL);
+    return () => clearInterval(interval);
   }, []);
+
+  if (loading) {
+    return <div className="teacher-dashboard"><div className="dashboard-content"><p>Loading dashboard...</p></div></div>;
+  }
+  if (error) {
+    return <div className="teacher-dashboard"><div className="dashboard-content"><p>{error}</p></div></div>;
+  }
 
   return (
     <div className="teacher-dashboard">
@@ -39,10 +75,10 @@ const TeacherDashboard = () => {
           <div className="card-body">
             <p>Welcome, Teacher! Here's a summary of your activities.</p>
             <ul>
-              <li>Total Classes: <strong>5</strong></li>
-              <li>Total Students: <strong>150</strong></li>
-              <li>Pending Assignments to Review: <strong>12</strong></li>
-              <li>Upcoming Classes Today: <strong>2</strong></li>
+              <li>Total Classes: <strong>{stats?.totalClasses ?? '-'}</strong></li>
+              <li>Total Students: <strong>{stats?.totalStudents ?? '-'}</strong></li>
+              <li>Pending Assignments to Review: <strong>{mockAssignments.length}</strong></li>
+              <li>Upcoming Classes Today: <strong>{stats?.upcomingClasses?.length ?? 0}</strong></li>
             </ul>
           </div>
         </div>
@@ -52,9 +88,13 @@ const TeacherDashboard = () => {
           <h2 className="card-title"><i className="fas fa-chalkboard"></i> My Classes</h2>
           <div className="card-body">
             <ul>
-              <li>Class 10A - Mathematics</li>
-              <li>Class 11B - Physics</li>
-              <li>Class 9C - Science</li>
+              {classes.length > 0 ? (
+                classes.map(cls => (
+                  <li key={cls._id}>{cls.name} - {cls.subject}</li>
+                ))
+              ) : (
+                <li>No classes assigned.</li>
+              )}
             </ul>
             <div className="card-footer">
               <button className="view-more-button">View All Classes</button>
@@ -62,14 +102,15 @@ const TeacherDashboard = () => {
           </div>
         </div>
 
-        {/* Pending Assignments Card */}
+        {/* Pending Assignments Card (Mock) */}
         <div className="dashboard-card assignments-card">
           <h2 className="card-title"><i className="fas fa-tasks"></i> Pending Assignments</h2>
           <div className="card-body">
             <p>Assignments needing your attention:</p>
             <ul>
-              <li>Math Homework - Class 10A (Due: 2024-07-15)</li>
-              <li>Physics Lab Report - Class 11B (Due: 2024-07-18)</li>
+              {mockAssignments.map((a, idx) => (
+                <li key={idx}>{a.title} (Due: {a.due})</li>
+              ))}
             </ul>
             <div className="card-footer">
               <button className="view-more-button">Review Assignments</button>
@@ -82,8 +123,15 @@ const TeacherDashboard = () => {
           <h2 className="card-title"><i className="fas fa-envelope"></i> Recent Messages</h2>
           <div className="card-body">
             <ul>
-              <li>Student query from Jane Doe regarding Calculus.</li>
-              <li>Admin announcement: Faculty meeting tomorrow at 10 AM.</li>
+              {messages.length > 0 ? (
+                messages.map((msg, idx) => (
+                  <li key={msg._id || idx}>
+                    {msg.sender ? `${msg.sender.firstName} ${msg.sender.lastName}` : 'Unknown'}: {msg.content}
+                  </li>
+                ))
+              ) : (
+                <li>No recent messages.</li>
+              )}
             </ul>
             <div className="card-footer">
               <button className="all-messages-button">View All Messages</button>
@@ -91,25 +139,26 @@ const TeacherDashboard = () => {
           </div>
         </div>
 
-        {/* Attendance Summary Card */}
+        {/* Attendance Summary Card (Mock) */}
         <div className="dashboard-card attendance-card">
           <h2 className="card-title"><i className="fas fa-clipboard-check"></i> Attendance Summary</h2>
           <div className="card-body">
-            <p>Today's attendance marked for 3/5 classes.</p>
-            <p>Upcoming attendance to be marked for Class 9C.</p>
+            <p>{mockAttendance.summary}</p>
+            <p>{mockAttendance.upcoming}</p>
             <div className="card-footer">
               <button className="view-more-button">Mark Attendance</button>
             </div>
           </div>
         </div>
 
-        {/* School Announcements Card */}
+        {/* School Announcements Card (Mock) */}
         <div className="dashboard-card announcements-card">
           <h2 className="card-title"><i className="fas fa-bullhorn"></i> School Announcements</h2>
           <div className="card-body">
             <ul>
-              <li>Parent-Teacher Meeting scheduled for Aug 5th.</li>
-              <li>Professional development workshop on July 25th.</li>
+              {mockAnnouncements.map((a, idx) => (
+                <li key={idx}>{a}</li>
+              ))}
             </ul>
             <div className="card-footer">
               <button className="view-more-button">View All Announcements</button>

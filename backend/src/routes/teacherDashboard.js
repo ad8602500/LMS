@@ -45,4 +45,19 @@ router.get('/stats', auth, checkRole(['TEACHER']), async (req, res) => {
   }
 });
 
+// GET /api/teacher/classes
+router.get('/classes', auth, checkRole(['TEACHER']), async (req, res) => {
+  try {
+    const teacherId = req.user._id;
+    const schoolId = req.user.schoolId;
+
+    const classes = await Class.find({ teacherId, schoolId, isActive: true });
+    res.status(200).json(classes);
+  } catch (error) {
+    console.error('Error fetching teacher classes:', error);
+    res.status(500).json({ message: 'Error fetching teacher classes' });
+  }
+});
+
+
 export default router; 

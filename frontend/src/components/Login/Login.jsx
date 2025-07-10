@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
 import axios from 'axios';
+import SuperAdminDashboard from '../SuperAdmin/Dashboard';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -89,7 +90,7 @@ const Login = () => {
             navigate('/student/dashboard');
             break;
           case 'super_admin':
-            navigate('/super-admin/dashboard');
+            navigate('/super-admin');
             break;
           default:
             setError('Unknown user role.');
