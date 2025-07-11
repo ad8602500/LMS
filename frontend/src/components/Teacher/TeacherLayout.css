@@ -83,12 +83,12 @@
 
 .teacher-main-header {
   background-color: #fff;
-  padding: 15px 30px;
+  padding: 6px 18px; /* reduced padding */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 60px;
+  min-height: 40px; /* reduced min height */
 }
 
 .header-right {
@@ -144,6 +144,6 @@
 
 .teacher-content-area {
   flex-grow: 1;
-  padding: 20px;
+  padding: 8px 12px; /* reduced padding */
   overflow-y: auto;
 } 

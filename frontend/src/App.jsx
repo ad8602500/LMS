@@ -7,7 +7,8 @@ import Register from './components/Login/Register';
 import AdminLayout from './components/Admin/AdminLayout';
 import Dashboard from './components/Admin/Dashboard';
 import Teachers from './components/Admin/Teachers';
-import Students from './components/Admin/Students';
+import AdminStudents from './components/Admin/Students';
+import TeacherStudents from './components/Teacher/Students';
 import Classes from './components/Admin/Classes';
 import Attendance from './components/Admin/Attendance';
 import Fees from './components/Admin/Fees';
@@ -74,7 +75,7 @@ const App = () => {
     setLoadingStudents(true);
     setStudents([]);
     const token = localStorage.getItem('token');
-    const response = await fetch(`https://lms-ul7x.onrender.com/api/admin/classes/${classId}/students`, {
+    const response = await fetch(`http://localhost:5000/api/admin/classes/teacher/classes`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await response.json();
@@ -103,7 +104,7 @@ const App = () => {
               <Route index element={<Dashboard />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="teachers" element={<Teachers />} />
-              <Route path="students" element={<Students />} />
+              <Route path="students" element={<AdminStudents />} />
               <Route path="classes" element={<Classes />} />
               <Route path="attendance" element={<Attendance />} />
               <Route path="fees" element={<Fees />} />
@@ -125,7 +126,7 @@ const App = () => {
               <Route path="courses" element={<Courses />} />
               <Route path="assignments" element={<Assignments />} />
               <Route path="schedule" element={<Schedule />} />
-              <Route path="students" element={<Students />} />
+              <Route path="students" element={<TeacherStudents />} />
               <Route path="attendance" element={<Attendance />} />
               <Route path="communication" element={<Communication />} />
               <Route path="reports" element={<Reports />} />
