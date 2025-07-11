@@ -12,6 +12,7 @@ import schoolRoutes from './routes/school.js';
 import userRoutes from './routes/user.js';
 import superAdminRoutes from './routes/superAdmin.js';
 import teacherRoutes from './routes/teacher.js';
+import teacherInfoRoutes from './routes/teacherInfo.js';
 import studentRoutes from './routes/student.js';
 import classRoutes from './routes/class.js';
 import timetableRoutes from './routes/timetable.js';
@@ -84,6 +85,8 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/fees', feesRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/message', messageRoutes);
+
+app.use('/api/teacher/info', teacherInfoRoutes);
 app.use('/api/teacher', teacherRoutes);
 
 
