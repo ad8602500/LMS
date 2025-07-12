@@ -14,6 +14,12 @@ const optionalFields = [
 ];
 
 const initialState = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  subject: '',
+  qualification: '',
+  joiningDate: '',
   permanentAddress: '',
   currentAddress: '',
   aadharNumber: '',
@@ -32,6 +38,9 @@ const initialState = {
 };
 
 const Profile = () => {
+  const [personalInfo, setPersonalInfo] = useState({
+    firstName: '', lastName: '', email: '', subject: '', qualification: '', joiningDate: ''
+  });
   const [profile, setProfile] = useState(initialState);
   const [finalized, setFinalized] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -39,23 +48,41 @@ const Profile = () => {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchAll = async () => {
       setLoading(true);
       setError('');
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('/api/teacher/me', {
+        // Fetch personal info from User model
+        const resPersonal = await axios.get('/api/teacher/me', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setProfile({ ...initialState, ...res.data });
-        setFinalized(res.data.profileFinalized);
+        setPersonalInfo({
+          firstName: resPersonal.data.firstName || '',
+          lastName: resPersonal.data.lastName || '',
+          email: resPersonal.data.email || '',
+          subject: resPersonal.data.subject || '',
+          qualification: resPersonal.data.qualification || '',
+          joiningDate: resPersonal.data.joiningDate || ''
+        });
+        // Fetch required/optional info from TeacherInfo
+        try {
+          const resInfo = await axios.get('/api/teacher/info/me', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setProfile({ ...initialState, ...resInfo.data });
+          setFinalized(resInfo.data.finalized);
+        } catch (err) {
+          setProfile(initialState);
+          setFinalized(false);
+        }
       } catch (err) {
         setError('Failed to load profile');
       } finally {
         setLoading(false);
       }
     };
-    fetchProfile();
+    fetchAll();
   }, []);
 
   const validate = () => {
@@ -83,7 +110,7 @@ const Profile = () => {
     }
     try {
       const token = localStorage.getItem('token');
-      await axios.put('/api/teacher/me', profile, {
+      await axios.put('/api/teacher/info/me', profile, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setFinalized(true);
@@ -107,6 +134,41 @@ const Profile = () => {
       {error && <div className="profile-error"><FaExclamationCircle /> {error}</div>}
       {success && <div className="profile-success"><FaCheckCircle /> {success}</div>}
       <form onSubmit={handleSubmit} className="profile-form">
+        <div className="profile-section">
+          <h3>Personal Information</h3>
+          <div className="profile-fields-grid">
+            <div className="profile-field">
+              <label>First Name
+                <input name="firstName" value={personalInfo.firstName} readOnly />
+              </label>
+            </div>
+            <div className="profile-field">
+              <label>Last Name
+                <input name="lastName" value={personalInfo.lastName} readOnly />
+              </label>
+            </div>
+            <div className="profile-field">
+              <label>Email
+                <input name="email" value={personalInfo.email} readOnly />
+              </label>
+            </div>
+            <div className="profile-field">
+              <label>Subject
+                <input name="subject" value={personalInfo.subject} readOnly />
+              </label>
+            </div>
+            <div className="profile-field">
+              <label>Qualification
+                <input name="qualification" value={personalInfo.qualification} readOnly />
+              </label>
+            </div>
+            <div className="profile-field">
+              <label>Joining Date
+                <input name="joiningDate" value={personalInfo.joiningDate ? personalInfo.joiningDate.slice(0,10) : ''} readOnly />
+              </label>
+            </div>
+          </div>
+        </div>
         <div className="profile-section">
           <h3>Required Information</h3>
           <div className="profile-fields-grid">

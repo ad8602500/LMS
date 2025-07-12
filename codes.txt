@@ -1,0 +1,1190 @@
+auth.js {import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+
+export const auth = async (req, res, next) => {
+  try {
+    console.log('=== AUTH MIDDLEWARE DEBUG ===');
+    console.log('Request URL:', req.url);
+    console.log('Request method:', req.method);
+    console.log('All cookies:', req.cookies);
+    console.log('Authorization header:', req.header('Authorization'));
+    
+    // Try to get token from cookie first, then from Authorization header
+    let token = req.cookies?.token;
+    console.log('Token from cookie:', token ? 'Present' : 'Missing');
+    
+    if (!token) {
+      // Fallback to Authorization header
+      token = req.header('Authorization')?.replace('Bearer ', '');
+      console.log('Token from header:', token ? 'Present' : 'Missing');
+    }
+    
+    if (!token) {
+      console.log('No token found - returning 401');
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    console.log('Token found, verifying...');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Token decoded successfully:', { userId: decoded.userId, role: decoded.role });
+    
+    const user = await User.findOne({ _id: decoded.userId, isActive: true });
+
+    if (!user) {
+      console.log('User not found or inactive');
+      return res.status(401).json({ message: 'User not found or inactive' });
+    }
+
+    console.log('User found:', { id: user._id, role: user.role, email: user.email });
+    req.token = token;
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    res.status(401).json({ message: 'Please authenticate' });
+  }
+};
+
+export const checkRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        message: 'Access denied. Insufficient permissions.' 
+      });
+    }
+
+    next();
+  };
+};
+
+export const isSuperAdmin = async (req, res, next) => {
+  try {
+    // First authenticate the user
+    await auth(req, res, () => {
+      // Then check if they are a super admin
+      if (req.user.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({ 
+          message: 'Access denied: Super Admin access required' 
+        });
+      }
+      next();
+    });
+  } catch (error) {
+    res.status(401).json({ message: 'Authentication failed' });
+  }
+};
+
+export const checkSchoolAccess = async (req, res, next) => {
+  try {
+    const schoolId = req.params.schoolId || req.body.schoolId;
+    
+    if (!schoolId) {
+      return res.status(400).json({ message: 'School ID is required' });
+    }
+
+    // Super Admin has access to all schools
+    if (req.user.role === 'SUPER_ADMIN') {
+      return next();
+    }
+
+    // Check if user belongs to the school
+    if (req.user.schoolId.toString() !== schoolId) {
+      return res.status(403).json({ 
+        message: 'Access denied: Not authorized for this school' 
+      });
+    }
+
+    next();
+  } catch (error) {
+    res.status(500).json({ message: 'Error checking school access' });
+  }
+}; 
+
+
+}
+class.js {import mongoose from 'mongoose';
+
+const classSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  section: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  capacity: {
+    type: Number,
+    required: true,
+    min: 1
+  },
+  teacherId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Teacher'
+  },
+  description: {
+    type: String,
+    trim: true
+  },
+  schoolId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'School',
+    required: true
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Update the updatedAt timestamp before saving
+classSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
+const Class = mongoose.model('Class', classSchema);
+
+export default Class; }
+user.js {import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+
+const userSchema = new mongoose.Schema({
+  firstName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  lastName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true
+  },
+  userId: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  role: {
+    type: String,
+    enum: ['SUPER_ADMIN', 'ADMIN', 'TEACHER', 'STUDENT'],
+    required: true
+  },
+  schoolId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'School',
+    required: function() {
+      return this.role !== 'SUPER_ADMIN';
+    }
+  },
+  // Teacher-specific fields (optional, required if role is TEACHER)
+  subject: {
+    type: String,
+    trim: true,
+    required: function() { return this.role === 'TEACHER'; }
+  },
+  qualification: {
+    type: String,
+    trim: true,
+    required: function() { return this.role === 'TEACHER'; }
+  },
+  joiningDate: {
+    type: Date,
+    required: function() { return this.role === 'TEACHER'; }
+  },
+  image: {
+    type: String,
+    default: null
+  },
+  // Student-specific fields (optional, required if role is STUDENT)
+  classId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Class',
+    required: function() { return this.role === 'STUDENT'; }
+  },
+  section: {
+    type: String,
+    trim: true,
+    required: function() { return this.role === 'STUDENT'; }
+  },
+  rollNo: {
+    type: String,
+    trim: true,
+    unique: function() { return this.role === 'STUDENT'; },
+    sparse: true, // Allows null values if not unique for other roles
+    required: function() { return this.role === 'STUDENT'; }
+  },
+  admissionNo: {
+    type: String,
+    trim: true,
+    unique: function() { return this.role === 'STUDENT'; },
+    sparse: true, // Allows null values if not unique for other roles
+    required: function() { return this.role === 'STUDENT'; }
+  },
+  parentName: {
+    type: String,
+    trim: true,
+    required: function() { return this.role === 'STUDENT'; }
+  },
+  parentPhone: {
+    type: String,
+    trim: true,
+    required: function() { return this.role === 'STUDENT'; }
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  lastLogin: {
+    type: Date
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  },
+  // Teacher profile fields (editable only once)
+  permanentAddress: {
+    type: String,
+    trim: true
+  },
+  currentAddress: {
+    type: String,
+    trim: true
+  },
+  aadharNumber: {
+    type: String,
+    trim: true
+  },
+  panNumber: {
+    type: String,
+    trim: true
+  },
+  motherName: {
+    type: String,
+    trim: true
+  },
+  fatherName: {
+    type: String,
+    trim: true
+  },
+  bankAccountNumber: {
+    type: String,
+    trim: true
+  },
+  ifscCode: {
+    type: String,
+    trim: true
+  },
+  // Optional extra fields
+  dateOfBirth: {
+    type: Date
+  },
+  gender: {
+    type: String,
+    enum: ['Male', 'Female', 'Other']
+  },
+  maritalStatus: {
+    type: String,
+    enum: ['Single', 'Married', 'Divorced', 'Widowed']
+  },
+  mobileNumber: {
+    type: String,
+    trim: true
+  },
+  emergencyContactNumber: {
+    type: String,
+    trim: true
+  },
+  emailId: {
+    type: String,
+    trim: true
+  },
+  bloodGroup: {
+    type: String,
+    trim: true
+  },
+  // Lock profile after submission
+  profileFinalized: {
+    type: Boolean,
+    default: false
+  },
+  studentProfileFinalized: {
+    type: Boolean,
+    default: false
+  },
+  category: String,
+  emergencyContact: String,
+  motherMobile: String,
+  fatherMobile: String,
+  landline: String,
+  lpuEmail: String,
+  // ... add other fields as needed ...
+});
+
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 8);
+  }
+  this.updatedAt = Date.now();
+  next();
+});
+
+// Method to compare password
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+const User = mongoose.model('User', userSchema);
+
+export default User; }
+
+class.js (routes) {import express from 'express';
+import Class from '../models/Class.js';
+import School from '../models/School.js';
+import User from '../models/User.js';
+import { auth } from '../middleware/auth.js';
+import Timetable from '../models/Timetable.js';
+
+const router = express.Router();
+
+// Get all classes for a school
+router.get('/', auth, async (req, res) => {
+  try {
+    const classes = await Class.find({ schoolId: req.user.schoolId });
+    res.json(classes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Add new class
+router.post('/', auth, async (req, res) => {
+  try {
+    const school = await School.findById(req.user.schoolId);
+    if (!school) {
+      return res.status(404).json({ message: 'School not found' });
+    }
+
+    const newClass = new Class({
+      ...req.body,
+      schoolId: req.user.schoolId
+    });
+
+    const savedClass = await newClass.save();
+    res.status(201).json(savedClass);
+  } catch (error) {
+    console.error('Error creating class:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Update class
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const classDoc = await Class.findById(req.params.id);
+    if (!classDoc) {
+      return res.status(404).json({ message: 'Class not found' });
+    }
+
+    // Convert both to strings for comparison
+    const classSchoolId = classDoc.schoolId.toString();
+    const userSchoolId = req.user.schoolId.toString();
+    
+    if (classSchoolId !== userSchoolId) {
+      return res.status(403).json({ message: 'Not authorized to update this class' });
+    }
+
+    const updatedClass = await Class.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    res.json(updatedClass);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Delete class
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const classDoc = await Class.findById(req.params.id);
+    if (!classDoc) {
+      return res.status(404).json({ message: 'Class not found' });
+    }
+
+    // Convert both to strings for comparison
+    const classSchoolId = classDoc.schoolId.toString();
+    const userSchoolId = req.user.schoolId.toString();
+    
+    if (classSchoolId !== userSchoolId) {
+      return res.status(403).json({ message: 'Not authorized to delete this class' });
+    }
+
+    await classDoc.remove();
+    res.json({ message: 'Class deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get students for a specific class
+router.get('/:id/students', auth, async (req, res) => {
+  try {
+    const classDoc = await Class.findById(req.params.id);
+    if (!classDoc) {
+      return res.status(404).json({ message: 'Class not found' });
+    }
+
+    // Convert both to strings for comparison
+    const classSchoolId = classDoc.schoolId.toString();
+    const userSchoolId = req.user.schoolId.toString();
+    
+    if (classSchoolId !== userSchoolId) {
+      return res.status(403).json({ message: 'Not authorized to access this class' });
+    }
+
+    console.log('Looking for students with:', {
+      classId: req.params.id,
+      role: 'STUDENT',
+      schoolId: req.user.schoolId,
+      isActive: true
+    });
+
+    const students = await User.find({
+      classId: req.params.id,
+      role: 'STUDENT',
+      schoolId: req.user.schoolId,
+      isActive: true
+    }).select('-password').sort({ rollNo: 1 });
+
+    console.log('Found students:', students.length);
+
+    res.json(students);
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get classes assigned to the logged-in teacher
+router.get('/teacher/classes', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'TEACHER') {
+      return res.status(403).json({ message: 'Access denied: Only teachers can access this endpoint.' });
+    }
+    const classes = await Class.find({ teacherId: req.user._id, schoolId: req.user.schoolId });
+    res.json(classes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Pseudocode for timetable creation
+router.post('/timetable', auth, async (req, res) => {
+  try {
+    const isTeacherAvailable = await Timetable.findOne({
+      day: req.body.day,
+      period: req.body.period,
+      teacherId: req.body.teacherId
+    });
+    if (isTeacherAvailable) {
+      return res.status(400).json({ message: 'Teacher is already assigned to another class at this time.' });
+    }
+
+    // Similar check for classroom if needed
+
+    // If checks pass, proceed with timetable creation
+    // ... (rest of the function)
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+export default router; }
+
+user.js(routes) {import express from 'express';
+import { body, validationResult } from 'express-validator';
+import User from '../models/User.js';
+import School from '../models/School.js';
+import { auth, checkRole, checkSchoolAccess } from '../middleware/auth.js';
+
+const router = express.Router();
+
+// Get all users for a school (Admin only)
+router.get('/school/:schoolId', [
+  auth,
+  checkRole('ADMIN'),
+  checkSchoolAccess
+], async (req, res) => {
+  try {
+    const school = await School.findOne({ schoolId: req.params.schoolId });
+    if (!school) {
+      return res.status(404).json({ message: 'School not found' });
+    }
+
+    const users = await User.find({ 
+      schoolId: school._id,
+      isActive: true 
+    }).select('-password');
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Register new user (Admin only)
+router.post('/register', [
+  auth,
+  checkRole('ADMIN'),
+  body('schoolId').notEmpty(),
+  body('userId').notEmpty().trim(),
+  body('email').isEmail(),
+  body('password').isLength({ min: 6 }),
+  body('role').isIn(['TEACHER', 'STUDENT']),
+  body('firstName').notEmpty().trim(),
+  body('lastName').notEmpty().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const {
+      schoolId,
+      userId,
+      email,
+      password,
+      role,
+      firstName,
+      lastName
+    } = req.body;
+
+    // Check if school exists
+    const school = await School.findOne({ schoolId });
+    if (!school) {
+      return res.status(404).json({ message: 'School not found' });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      $or: [
+        { userId },
+        { email }
+      ]
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: 'User ID or email already exists' 
+      });
+    }
+
+    // Create new user
+    const user = new User({
+      userId,
+      schoolId: school._id,
+      email,
+      password,
+      role,
+      firstName,
+      lastName
+    });
+
+    await user.save();
+
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(201).json(userResponse);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update user (Admin only)
+router.put('/:userId', [
+  auth,
+  checkRole('ADMIN'),
+  body('email').optional().isEmail(),
+  body('firstName').optional().trim(),
+  body('lastName').optional().trim(),
+  body('isActive').optional().isBoolean()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const user = await User.findOne({ 
+      userId: req.params.userId,
+      isActive: true 
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if admin has access to this user's school
+    if (req.user.role !== 'SUPER_ADMIN' && 
+        req.user.schoolId.toString() !== user.schoolId.toString()) {
+      return res.status(403).json({ 
+        message: 'Not authorized to update this user' 
+      });
+    }
+
+    // Update fields
+    Object.keys(req.body).forEach(key => {
+      if (req.body[key] !== undefined && key !== 'password') {
+        user[key] = req.body[key];
+      }
+    });
+
+    await user.save();
+
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.json(userResponse);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Deactivate user (Admin only)
+router.delete('/:userId', auth, checkRole('ADMIN'), async (req, res) => {
+  try {
+    const user = await User.findOne({ 
+      userId: req.params.userId,
+      isActive: true 
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if admin has access to this user's school
+    if (req.user.role !== 'SUPER_ADMIN' && 
+        req.user.schoolId.toString() !== user.schoolId.toString()) {
+      return res.status(403).json({ 
+        message: 'Not authorized to deactivate this user' 
+      });
+    }
+
+    // Soft delete
+    user.isActive = false;
+    await user.save();
+
+    res.json({ message: 'User deactivated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+export default router; }
+
+auth.js(routes) {import express from 'express';
+import { body, validationResult } from 'express-validator';
+import User from '../models/User.js';
+import School from '../models/School.js';
+import { auth, checkRole, checkSchoolAccess } from '../middleware/auth.js';
+
+const router = express.Router();
+
+// Get all users for a school (Admin only)
+router.get('/school/:schoolId', [
+  auth,
+  checkRole('ADMIN'),
+  checkSchoolAccess
+], async (req, res) => {
+  try {
+    const school = await School.findOne({ schoolId: req.params.schoolId });
+    if (!school) {
+      return res.status(404).json({ message: 'School not found' });
+    }
+
+    const users = await User.find({ 
+      schoolId: school._id,
+      isActive: true 
+    }).select('-password');
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Register new user (Admin only)
+router.post('/register', [
+  auth,
+  checkRole('ADMIN'),
+  body('schoolId').notEmpty(),
+  body('userId').notEmpty().trim(),
+  body('email').isEmail(),
+  body('password').isLength({ min: 6 }),
+  body('role').isIn(['TEACHER', 'STUDENT']),
+  body('firstName').notEmpty().trim(),
+  body('lastName').notEmpty().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const {
+      schoolId,
+      userId,
+      email,
+      password,
+      role,
+      firstName,
+      lastName
+    } = req.body;
+
+    // Check if school exists
+    const school = await School.findOne({ schoolId });
+    if (!school) {
+      return res.status(404).json({ message: 'School not found' });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      $or: [
+        { userId },
+        { email }
+      ]
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: 'User ID or email already exists' 
+      });
+    }
+
+    // Create new user
+    const user = new User({
+      userId,
+      schoolId: school._id,
+      email,
+      password,
+      role,
+      firstName,
+      lastName
+    });
+
+    await user.save();
+
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(201).json(userResponse);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update user (Admin only)
+router.put('/:userId', [
+  auth,
+  checkRole('ADMIN'),
+  body('email').optional().isEmail(),
+  body('firstName').optional().trim(),
+  body('lastName').optional().trim(),
+  body('isActive').optional().isBoolean()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const user = await User.findOne({ 
+      userId: req.params.userId,
+      isActive: true 
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if admin has access to this user's school
+    if (req.user.role !== 'SUPER_ADMIN' && 
+        req.user.schoolId.toString() !== user.schoolId.toString()) {
+      return res.status(403).json({ 
+        message: 'Not authorized to update this user' 
+      });
+    }
+
+    // Update fields
+    Object.keys(req.body).forEach(key => {
+      if (req.body[key] !== undefined && key !== 'password') {
+        user[key] = req.body[key];
+      }
+    });
+
+    await user.save();
+
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.json(userResponse);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Deactivate user (Admin only)
+router.delete('/:userId', auth, checkRole('ADMIN'), async (req, res) => {
+  try {
+    const user = await User.findOne({ 
+      userId: req.params.userId,
+      isActive: true 
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if admin has access to this user's school
+    if (req.user.role !== 'SUPER_ADMIN' && 
+        req.user.schoolId.toString() !== user.schoolId.toString()) {
+      return res.status(403).json({ 
+        message: 'Not authorized to deactivate this user' 
+      });
+    }
+
+    // Soft delete
+    user.isActive = false;
+    await user.save();
+
+    res.json({ message: 'User deactivated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+export default router; }
+
+index.js {import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import dotenv from 'dotenv';
+import authRoutes from './routes/auth.js';
+import schoolRoutes from './routes/school.js';
+import userRoutes from './routes/user.js';
+import superAdminRoutes from './routes/superAdmin.js';
+import teacherRoutes from './routes/teacher.js';
+import studentRoutes from './routes/student.js';
+import classRoutes from './routes/class.js';
+import timetableRoutes from './routes/timetable.js';
+import adminRoutes from './routes/admin.js';
+import teacherDashboardRoutes from './routes/teacherDashboard.js';
+import attendanceRoutes from './routes/attendance.js';
+import feesRoutes from './routes/fees.js';
+import jwt from 'jsonwebtoken';
+import Timetable from './models/Timetable.js';
+import { auth, checkRole } from './middleware/auth.js';
+import messageRoutes from './routes/message.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables
+dotenv.config({ path: '../.env' });
+
+const app = express();
+app.use(cors({
+  origin: "http://localhost:5173", // frontend URL
+  credentials: true,               // allow cookies/auth headers
+}));
+
+// Middleware
+const allowedOrigins = [
+  'http://localhost:5173', // or your local frontend port
+  'https://lms-of1h.vercel.app'
+];
+
+// Add cookie parser BEFORE cors middleware
+app.use(cookieParser());
+
+
+// Configure CORS with specific options
+
+
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Create uploads directories if they don't exist
+const uploadDirs = ['uploads', 'uploads/teachers', 'uploads/students'];
+uploadDirs.forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => console.error('MongoDB connection error:', err));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/schools', schoolRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/super-admin', superAdminRoutes);
+app.use('/api/admin/teachers', teacherRoutes);
+app.use('/api/admin/students', studentRoutes);
+app.use('/api/admin/classes', classRoutes);
+app.use('/api/admin/timetable', timetableRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/teacherDashboard', teacherDashboardRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/fees', feesRoutes);
+app.use('/api/student', studentRoutes);
+app.use('/api/message', messageRoutes);
+app.use('/api/teacher', teacherRoutes);
+
+
+// Add this to your index.js for testing
+app.get('/api/test-auth', (req, res) => {
+  console.log('Cookies received:', req.cookies);
+  res.json({ 
+    cookies: req.cookies,
+    token: req.cookies.token ? 'present' : 'missing'
+  });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!' });
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+}); }
+
+app.jsx{import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { SnackbarProvider } from 'notistack';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import Login from './components/Login/Login';
+import Register from './components/Login/Register';
+import AdminLayout from './components/Admin/AdminLayout';
+import Dashboard from './components/Admin/Dashboard';
+import Teachers from './components/Admin/Teachers';
+import Students from './components/Admin/Students';
+import Classes from './components/Admin/Classes';
+import Attendance from './components/Admin/Attendance';
+import Fees from './components/Admin/Fees';
+import SuperAdminDashboard from './components/SuperAdmin/Dashboard';
+import TeacherLayout from './components/Teacher/TeacherLayout';
+import TeacherDashboard from './components/Teacher/TeacherDashboard';
+import StudentLayout from './components/Student/StudentLayout';
+import StudentDashboard from './components/Student/StudentDashboard';
+import StudentProfile from './components/Student/Profile/StudentProfile';
+import Courses from './components/Teacher/Courses';
+import Assignments from './components/Teacher/Assignments';
+import Schedule from './components/Teacher/Schedule';
+import Communication from './components/Teacher/Communication';
+import Reports from './components/Teacher/Reports';
+import Profile from './components/Teacher/Profile';
+import Timetable from './components/Admin/Timetable';
+import StudentTimetable from './components/Student/StudentTimetable';
+import StudentAttendance from './components/Student/StudentAttendance';
+import MessagingPanel from './components/Student/MessagingPanel';
+import AdminMessages from './components/Admin/Messages';
+import Setting from './components/SuperAdmin/Setting';
+import './App.css';
+import { useState } from 'react';
+
+// Protected Route component
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const token = localStorage.getItem('token');
+
+  if (!token || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.map(role => role.toUpperCase()).includes(user.role?.toUpperCase())) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+};
+
+const theme = createTheme({
+  // You can customize your theme here
+  palette: {
+    primary: {
+      main: '#ff9800', // Orange to match your current design
+    },
+    secondary: {
+      main: '#007bff', // Blue for buttons
+    },
+  },
+  typography: {
+    fontFamily: 'Roboto, sans-serif',
+  },
+});
+
+const App = () => {
+  const [expandedClassId, setExpandedClassId] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState(null);
+
+  const handleClassClick = async (classId) => {
+    setSelectedClassId(classId);
+    setLoadingStudents(true);
+    setStudents([]);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`https://lms-ul7x.onrender.com/api/admin/classes/${classId}/students`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await response.json();
+    setStudents(data);
+    setLoadingStudents(false);
+  };
+
+  return (
+    <SnackbarProvider maxSnack={3}>
+      <ThemeProvider theme={theme}>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            {/* Admin Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="teachers" element={<Teachers />} />
+              <Route path="students" element={<Students />} />
+              <Route path="classes" element={<Classes />} />
+              <Route path="attendance" element={<Attendance />} />
+              <Route path="fees" element={<Fees />} />
+              <Route path="timetable" element={<Timetable />} />
+              <Route path="messages" element={<AdminMessages />} />
+            </Route>
+
+            {/* Teacher Routes */}
+            <Route
+              path="/teacher"
+              element={
+                <ProtectedRoute allowedRoles={['TEACHER']}>
+                  <TeacherLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<TeacherDashboard />} />
+              <Route path="dashboard" element={<TeacherDashboard />} />
+              <Route path="courses" element={<Courses />} />
+              <Route path="assignments" element={<Assignments />} />
+              <Route path="schedule" element={<Schedule />} />
+              <Route path="students" element={<Students />} />
+              <Route path="attendance" element={<Attendance />} />
+              <Route path="communication" element={<Communication />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="profile" element={<Profile />} />
+            </Route>
+
+            {/* Student Routes */}
+            <Route path="/student" element={<StudentLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<StudentDashboard />} />
+              <Route path="profile" element={<StudentProfile />} />
+              <Route path="timetable" element={<StudentTimetable />} />
+              <Route path="attendance" element={<StudentAttendance />} />
+              <Route path="messages" element={<MessagingPanel user={JSON.parse(localStorage.getItem('user'))} />} />
+            </Route>
+
+            {/* Super Admin Routes */}
+            <Route
+              path="/super-admin"
+              element={
+                <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+                  <SuperAdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/setting"
+              element={
+                <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+                  <Setting />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Default Route */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Router>
+      </ThemeProvider>
+    </SnackbarProvider>
+  );
+};
+
+export default App;
+}

@@ -12,6 +12,7 @@ import schoolRoutes from './routes/school.js';
 import userRoutes from './routes/user.js';
 import superAdminRoutes from './routes/superAdmin.js';
 import teacherRoutes from './routes/teacher.js';
+import teacherInfoRoutes from './routes/teacherInfo.js';
 import studentRoutes from './routes/student.js';
 import classRoutes from './routes/class.js';
 import timetableRoutes from './routes/timetable.js';
@@ -23,6 +24,7 @@ import jwt from 'jsonwebtoken';
 import Timetable from './models/Timetable.js';
 import { auth, checkRole } from './middleware/auth.js';
 import messageRoutes from './routes/message.js';
+import assignmentRoutes from './routes/assignment.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -57,7 +59,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Create uploads directories if they don't exist
-const uploadDirs = ['uploads', 'uploads/teachers', 'uploads/students'];
+const uploadDirs = ['uploads', 'uploads/teachers', 'uploads/students', 'uploads/assignments', 'uploads/submissions'];
 uploadDirs.forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -84,7 +86,11 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/fees', feesRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/message', messageRoutes);
+
+app.use('/api/teacher/info', teacherInfoRoutes);
 app.use('/api/teacher', teacherRoutes);
+app.use('/api/assignment', assignmentRoutes);
+app.use('/api/teacher', classRoutes);
 
 
 // Add this to your index.js for testing

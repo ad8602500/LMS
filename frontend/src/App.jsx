@@ -27,6 +27,7 @@ import Profile from './components/Teacher/Profile';
 import Timetable from './components/Admin/Timetable';
 import StudentTimetable from './components/Student/StudentTimetable';
 import StudentAttendance from './components/Student/StudentAttendance';
+import StudentAssignments from './components/Student/StudentAssignments';
 import MessagingPanel from './components/Student/MessagingPanel';
 import AdminMessages from './components/Admin/Messages';
 import Setting from './components/SuperAdmin/Setting';
@@ -50,13 +51,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 };
 
 const theme = createTheme({
-  // You can customize your theme here
   palette: {
     primary: {
-      main: '#ff9800', // Orange to match your current design
+      main: '#ff9800',
     },
     secondary: {
-      main: '#007bff', // Blue for buttons
+      main: '#007bff',
     },
   },
   typography: {
@@ -140,6 +140,7 @@ const App = () => {
               <Route path="profile" element={<StudentProfile />} />
               <Route path="timetable" element={<StudentTimetable />} />
               <Route path="attendance" element={<StudentAttendance />} />
+              <Route path="assignments" element={<StudentAssignments />} />
               <Route path="messages" element={<MessagingPanel user={JSON.parse(localStorage.getItem('user'))} />} />
             </Route>
 
