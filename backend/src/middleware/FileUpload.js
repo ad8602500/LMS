@@ -7,9 +7,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const storage = multer.diskStorage({
+  // destination: (req, file, cb) => {
+  //   const uploadType = req.baseUrl.includes('assignments') ? 'assignments' : 'submissions';
+  //   cb(null, path.join(__dirname, `../../uploads/${uploadType}`));
+  // },
   destination: (req, file, cb) => {
-    const uploadType = req.baseUrl.includes('assignments') ? 'assignments' : 'submissions';
-    cb(null, path.join(__dirname, `../../uploads/${uploadType}`));
+    const uploadPath = path.join(__dirname, '../../uploads/assignments');
+    console.log(`Saving file to: ${uploadPath}`); // Debug log
+    cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

@@ -1,4 +1,5 @@
-auth.js {import jwt from 'jsonwebtoken';
+auth.js {
+    import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
 export const auth = async (req, res, next) => {
@@ -105,8 +106,107 @@ export const checkSchoolAccess = async (req, res, next) => {
 }; 
 
 
+
 }
-class.js {import mongoose from 'mongoose';
+
+FileUpload.js {
+    import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const storage = multer.diskStorage({
+  // destination: (req, file, cb) => {
+  //   const uploadType = req.baseUrl.includes('assignments') ? 'assignments' : 'submissions';
+  //   cb(null, path.join(__dirname, `../../uploads/${uploadType}`));
+  // },
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(__dirname, '../../uploads/assignments');
+    console.log(`Saving file to: ${uploadPath}`); // Debug log
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only PDF, JPEG, PNG, and Word files are allowed.'), false);
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
+
+export default upload;
+}
+
+assignment.js {
+    import mongoose from 'mongoose';
+
+const assignmentSchema = new mongoose.Schema({
+    subject: {
+        type: String,
+        required: true, trim: true
+    },
+    topic: {
+        type: String,
+        required: true, trim: true
+    },
+    filePath: {
+        type: String,
+        required: true
+    },
+    dueDate: {
+        type: Date,
+        required: false
+    },
+    classId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Class', required: true
+    },
+    teacherId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User', required: true
+    },
+    schoolId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'School', required: true
+    },
+    isActive: {
+        type: Boolean,
+        default: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+assignmentSchema.pre('save', function (next) { this.updatedAt = Date.now(); next(); });
+
+const Assignment = mongoose.model('Assignment', assignmentSchema);
+
+export default Assignment;
+}
+
+class.js {
+import mongoose from 'mongoose';
 
 const classSchema = new mongoose.Schema({
   name: {
@@ -159,110 +259,45 @@ classSchema.pre('save', function(next) {
 
 const Class = mongoose.model('Class', classSchema);
 
-export default Class; }
-user.js {import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+export default Class; 
+}
 
-const userSchema = new mongoose.Schema({
-  firstName: {
-    type: String,
-    required: true,
-    trim: true
+submission.js {
+    import mongoose from 'mongoose';
+
+const submissionSchema = new mongoose.Schema({
+  assignmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Assignment',
+    required: true
   },
-  lastName: {
-    type: String,
-    required: true,
-    trim: true
+  studentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  email: {
+  filePath: {
     type: String,
-    required: true,
-    unique: true,
+    required: true
+  },
+  submissionDate: {
+    type: Date,
+    default: Date.now
+  },
+  marks: {
+    type: Number,
+    min: 0,
+    default: null
+  },
+  remarks: {
+    type: String,
     trim: true,
-    lowercase: true
-  },
-  userId: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true
-  },
-  password: {
-    type: String,
-    required: true
-  },
-  role: {
-    type: String,
-    enum: ['SUPER_ADMIN', 'ADMIN', 'TEACHER', 'STUDENT'],
-    required: true
+    default: null
   },
   schoolId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'School',
-    required: function() {
-      return this.role !== 'SUPER_ADMIN';
-    }
-  },
-  // Teacher-specific fields (optional, required if role is TEACHER)
-  subject: {
-    type: String,
-    trim: true,
-    required: function() { return this.role === 'TEACHER'; }
-  },
-  qualification: {
-    type: String,
-    trim: true,
-    required: function() { return this.role === 'TEACHER'; }
-  },
-  joiningDate: {
-    type: Date,
-    required: function() { return this.role === 'TEACHER'; }
-  },
-  image: {
-    type: String,
-    default: null
-  },
-  // Student-specific fields (optional, required if role is STUDENT)
-  classId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Class',
-    required: function() { return this.role === 'STUDENT'; }
-  },
-  section: {
-    type: String,
-    trim: true,
-    required: function() { return this.role === 'STUDENT'; }
-  },
-  rollNo: {
-    type: String,
-    trim: true,
-    unique: function() { return this.role === 'STUDENT'; },
-    sparse: true, // Allows null values if not unique for other roles
-    required: function() { return this.role === 'STUDENT'; }
-  },
-  admissionNo: {
-    type: String,
-    trim: true,
-    unique: function() { return this.role === 'STUDENT'; },
-    sparse: true, // Allows null values if not unique for other roles
-    required: function() { return this.role === 'STUDENT'; }
-  },
-  parentName: {
-    type: String,
-    trim: true,
-    required: function() { return this.role === 'STUDENT'; }
-  },
-  parentPhone: {
-    type: String,
-    trim: true,
-    required: function() { return this.role === 'STUDENT'; }
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  lastLogin: {
-    type: Date
+    required: true
   },
   createdAt: {
     type: Date,
@@ -271,105 +306,554 @@ const userSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
-  },
-  // Teacher profile fields (editable only once)
-  permanentAddress: {
-    type: String,
-    trim: true
-  },
-  currentAddress: {
-    type: String,
-    trim: true
-  },
-  aadharNumber: {
-    type: String,
-    trim: true
-  },
-  panNumber: {
-    type: String,
-    trim: true
-  },
-  motherName: {
-    type: String,
-    trim: true
-  },
-  fatherName: {
-    type: String,
-    trim: true
-  },
-  bankAccountNumber: {
-    type: String,
-    trim: true
-  },
-  ifscCode: {
-    type: String,
-    trim: true
-  },
-  // Optional extra fields
-  dateOfBirth: {
-    type: Date
-  },
-  gender: {
-    type: String,
-    enum: ['Male', 'Female', 'Other']
-  },
-  maritalStatus: {
-    type: String,
-    enum: ['Single', 'Married', 'Divorced', 'Widowed']
-  },
-  mobileNumber: {
-    type: String,
-    trim: true
-  },
-  emergencyContactNumber: {
-    type: String,
-    trim: true
-  },
-  emailId: {
-    type: String,
-    trim: true
-  },
-  bloodGroup: {
-    type: String,
-    trim: true
-  },
-  // Lock profile after submission
-  profileFinalized: {
-    type: Boolean,
-    default: false
-  },
-  studentProfileFinalized: {
-    type: Boolean,
-    default: false
-  },
-  category: String,
-  emergencyContact: String,
-  motherMobile: String,
-  fatherMobile: String,
-  landline: String,
-  lpuEmail: String,
-  // ... add other fields as needed ...
+  }
 });
 
-// Hash password before saving
-userSchema.pre('save', async function(next) {
-  if (this.isModified('password')) {
-    this.password = await bcrypt.hash(this.password, 8);
-  }
+submissionSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
 
-// Method to compare password
-userSchema.methods.comparePassword = async function(candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
-};
+const Submission = mongoose.model('Submission', submissionSchema);
 
-const User = mongoose.model('User', userSchema);
+export default Submission;
+}
 
-export default User; }
+assignment.js (routes){
+    import express from 'express';
+import Assignment from '../models/Assignment.js';
+import Submission from '../models/Submission.js';
+import Class from '../models/Class.js';
+import upload from '../middleware/FileUpload.js';
+import { auth, checkRole } from '../middleware/auth.js';
 
-class.js (routes) {import express from 'express';
+const router = express.Router();
+
+// Create assignment (Teacher only)
+router.post('/', [auth, checkRole(['TEACHER']), upload.single('file')], async (req, res) => {
+  try {
+    const { subject, topic, dueDate, classId } = req.body;
+    const classDoc = await Class.findById(classId);
+    if (!classDoc) {
+      return res.status(404).json({ message: 'Class not found' });
+    }
+    if (classDoc.teacherId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to create assignment for this class' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ message: 'Assignment file is required' });
+    }
+    const assignment = new Assignment({
+      subject,
+      topic,
+      filePath: `/uploads/assignments/${req.file.filename}`,
+      dueDate: dueDate || null,
+      classId,
+      teacherId: req.user._id,
+      schoolId: req.user.schoolId
+    });
+    await assignment.save();
+    res.status(201).json(assignment);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Get assignments for a class (Teacher or Student)
+router.get('/class/:classId', [auth, checkRole(['TEACHER', 'STUDENT'])], async (req, res) => {
+  try {
+    const classDoc = await Class.findById(req.params.classId);
+    if (!classDoc) {
+      return res.status(404).json({ message: 'Class not found' });
+    }
+    if (req.user.role !== 'SUPER_ADMIN' && classDoc.schoolId.toString() !== req.user.schoolId.toString()) {
+      return res.status(403).json({ message: 'Not authorized to access this class' });
+    }
+    if (req.user.role === 'STUDENT' && req.user.classId.toString() !== req.params.classId) {
+      return res.status(403).json({ message: 'Not authorized to access assignments for this class' });
+    }
+    const assignments = await Assignment.find({ classId: req.params.classId, isActive: true })
+      .populate('teacherId', 'firstName lastName')
+      .populate('classId', 'name section');
+    res.json(assignments);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update assignment (Teacher only)
+router.put('/:id', [auth, checkRole(['TEACHER']), upload.single('file')], async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+    if (assignment.teacherId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to update this assignment' });
+    }
+    const { subject, topic, dueDate } = req.body;
+    if (subject) assignment.subject = subject;
+    if (topic) assignment.topic = topic;
+    if (dueDate) assignment.dueDate = dueDate;
+    if (req.file) assignment.filePath = `/uploads/assignments/${req.file.filename}`;
+    await assignment.save();
+    res.json(assignment);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Delete assignment (Teacher only)
+router.delete('/:id', [auth, checkRole(['TEACHER'])], async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+    if (assignment.teacherId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to delete this assignment' });
+    }
+    assignment.isActive = false;
+    await assignment.save();
+    res.json({ message: 'Assignment deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Upload submission (Student only)
+router.post('/submission/:assignmentId', [auth, checkRole(['STUDENT']), upload.single('file')], async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.assignmentId);
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+    if (req.user.classId.toString() !== assignment.classId.toString()) {
+      return res.status(403).json({ message: 'Not authorized to submit for this assignment' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ message: 'Submission file is required' });
+    }
+    const existingSubmission = await Submission.findOne({
+      assignmentId: req.params.assignmentId,
+      studentId: req.user._id
+    });
+    if (existingSubmission) {
+      return res.status(400).json({ message: 'You have already submitted this assignment' });
+    }
+    const submission = new Submission({
+      assignmentId: req.params.assignmentId,
+      studentId: req.user._id,
+      filePath: `/Uploads/submissions/${req.file.filename}`,
+      schoolId: req.user.schoolId
+    });
+    await submission.save();
+    res.status(201).json(submission);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Get submissions for an assignment (Teacher only)
+router.get('/submission/:assignmentId', [auth, checkRole(['TEACHER'])], async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.assignmentId);
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+    if (assignment.teacherId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to view submissions for this assignment' });
+    }
+    const submissions = await Submission.find({ assignmentId: req.params.assignmentId })
+      .populate('studentId', 'firstName lastName rollNo')
+      .populate('assignmentId', 'subject topic');
+    res.json(submissions);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get submissions for a student (Student only)
+router.get('/submission/student/:studentId', [auth, checkRole(['STUDENT'])], async (req, res) => {
+  try {
+    if (req.user._id.toString() !== req.params.studentId) {
+      return res.status(403).json({ message: 'Not authorized to view these submissions' });
+    }
+    const submissions = await Submission.find({ studentId: req.params.studentId })
+      .populate('assignmentId', 'subject topic')
+      .populate('studentId', 'firstName lastName rollNo');
+    res.json(submissions);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Grade submission (Teacher only)
+router.put('/submission/:submissionId', [auth, checkRole(['TEACHER'])], async (req, res) => {
+  try {
+    const { marks, remarks } = req.body;
+    const submission = await Submission.findById(req.params.submissionId);
+    if (!submission) {
+      return res.status(404).json({ message: 'Submission not found' });
+    }
+    const assignment = await Assignment.findById(submission.assignmentId);
+    if (assignment.teacherId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to grade this submission' });
+    }
+    if (marks !== undefined) submission.marks = marks;
+    if (remarks) submission.remarks = remarks;
+    await submission.save();
+    res.json(submission);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+export default router;
+}
+
+auth.js (routes) {
+    import express from 'express';
+import jwt from 'jsonwebtoken';
+import { body, validationResult } from 'express-validator';
+import User from '../models/User.js';
+import School from '../models/School.js';
+import { auth, checkRole } from '../middleware/auth.js';
+import bcrypt from 'bcryptjs';
+
+const router = express.Router();
+
+// Create initial super admin (should be called only once)
+router.post('/create-super-admin', async (req, res) => {
+  try {
+    // Check if super admin already exists
+    const existingSuperAdmin = await User.findOne({ role: 'SUPER_ADMIN' });
+    if (existingSuperAdmin) {
+      return res.status(400).json({ message: 'Super admin already exists' });
+    }
+
+    // Create super admin
+    const superAdmin = new User({
+      userId: 'SUPER_ADMIN',
+      email: 'admin@lms.com',
+      password: 'admin123',
+      role: 'SUPER_ADMIN',
+      firstName: 'Super',
+      lastName: 'Admin',
+      isActive: true
+    });
+
+    await superAdmin.save();
+
+    res.status(201).json({
+      message: 'Super admin created successfully',
+      user: {
+        userId: superAdmin.userId,
+        email: superAdmin.email,
+        role: superAdmin.role
+      }
+    });
+  } catch (error) {
+    console.error('Create super admin error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Login route
+router.post('/login', [
+  body('schoolId').optional().trim(),
+  body('userId').notEmpty().trim(),
+  body('password').notEmpty()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { schoolId, userId, password } = req.body;
+    console.log('Login attempt:', { schoolId, userId });
+
+    // For Super Admin login
+    if (!schoolId) {
+      console.log('Attempting Super Admin login...');
+      const superAdmin = await User.findOne({
+        userId,
+        role: 'SUPER_ADMIN',
+        isActive: true
+      });
+
+      if (!superAdmin) {
+        console.log('Super Admin not found');
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      const isMatch = await superAdmin.comparePassword(password);
+      if (!isMatch) {
+        console.log('Super Admin password mismatch');
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Update last login
+      superAdmin.lastLogin = new Date();
+      await superAdmin.save();
+
+      const token = jwt.sign(
+        { userId: superAdmin._id, role: superAdmin.role },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      return res.json({
+        token,
+        user: {
+          id: superAdmin._id,
+          userId: superAdmin.userId,
+          role: superAdmin.role,
+          firstName: superAdmin.firstName,
+          lastName: superAdmin.lastName,
+          email: superAdmin.email
+        }
+      });
+    }
+
+    // For School Users (Admin, Teacher, Student)
+    console.log('Searching for school:', schoolId);
+    const school = await School.findOne({ schoolId, isActive: true });
+    if (!school) {
+      console.log('School not found or inactive:', schoolId);
+      return res.status(404).json({ message: 'School not found or inactive' });
+    }
+
+    console.log('Searching for user in school:', school._id);
+    // Find user in the school
+    const user = await User.findOne({
+      $or: [
+        { userId: userId },
+        { email: userId }
+      ],
+      schoolId: school._id,
+      isActive: true
+    });
+
+    if (!user) {
+      console.log('User not found in school');
+      return res.status(401).json({ 
+        message: 'Invalid credentials',
+        details: 'User not found in the specified school'
+      });
+    }
+
+    console.log('User found, checking password');
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      console.log('Password mismatch');
+      return res.status(401).json({ 
+        message: 'Invalid credentials',
+        details: 'Password is incorrect'
+      });
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role, schoolId: school._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    console.log('Login successful for user:', user.userId);
+    res.json({
+      token,
+      user: userResponse
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      message: 'Server error',
+      details: error.message
+    });
+  }
+});
+
+// Register new school (Super Admin only)
+router.post('/register-school', [
+  auth,
+  checkRole('SUPER_ADMIN'),
+  body('name').notEmpty().trim(),
+  body('schoolId').notEmpty().trim(),
+  body('address').notEmpty(),
+  body('contactEmail').isEmail(),
+  body('contactPhone').notEmpty(),
+  body('adminEmail').isEmail(),
+  body('adminPassword').isLength({ min: 6 }),
+  body('adminFirstName').notEmpty(),
+  body('adminLastName').notEmpty()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const {
+      name,
+      schoolId,
+      address,
+      contactEmail,
+      contactPhone,
+      adminEmail,
+      adminPassword,
+      adminFirstName,
+      adminLastName
+    } = req.body;
+
+    // Check if school ID already exists
+    const existingSchool = await School.findOne({ schoolId });
+    if (existingSchool) {
+      return res.status(400).json({ message: 'School ID already exists' });
+    }
+
+    // Create school
+    const school = new School({
+      name,
+      schoolId,
+      address,
+      contactEmail,
+      contactPhone
+    });
+
+    await school.save();
+
+    // Create school admin
+    const admin = new User({
+      userId: `ADMIN_${schoolId}`,
+      email: adminEmail,
+      password: adminPassword,
+      role: 'ADMIN',
+      firstName: adminFirstName,
+      lastName: adminLastName,
+      schoolId: school._id,
+      isActive: true
+    });
+
+    await admin.save();
+
+    res.status(201).json({
+      message: 'School registered successfully',
+      school: {
+        id: school._id,
+        name: school.name,
+        schoolId: school.schoolId
+      },
+      admin: {
+        id: admin._id,
+        email: admin.email,
+        role: admin.role
+      }
+    });
+  } catch (error) {
+    console.error('Register school error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Check if super admin exists
+router.get('/check-super-admin', async (req, res) => {
+  try {
+    const superAdmin = await User.findOne({ role: 'SUPER_ADMIN' });
+    if (superAdmin) {
+      res.json({
+        exists: true,
+        userId: superAdmin.userId,
+        email: superAdmin.email
+      });
+    } else {
+      res.json({ exists: false });
+    }
+  } catch (error) {
+    console.error('Check super admin error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Verify and create super admin if needed
+router.post('/verify-super-admin', async (req, res) => {
+  try {
+    // Check if super admin exists
+    let superAdmin = await User.findOne({ role: 'SUPER_ADMIN' });
+    
+    if (!superAdmin) {
+      console.log('No super admin found, creating one...');
+      
+      // Create a default school for super admin
+      const defaultSchool = new School({
+        name: 'System School',
+        schoolId: 'SYSTEM',
+        address: 'System Address',
+        contactEmail: 'system@lms.com',
+        contactPhone: '0000000000'
+      });
+      await defaultSchool.save();
+
+      // Create super admin
+      superAdmin = new User({
+        userId: '121',
+        schoolId: defaultSchool._id,
+        email: 'aditya@lms.com',
+        password: '1138',
+        role: 'SUPER_ADMIN',
+        firstName: 'Aditya',
+        lastName: 'Admin',
+        isActive: true
+      });
+      await superAdmin.save();
+      
+      console.log('Super admin created successfully');
+    }
+
+    // Return super admin details
+    res.json({
+      exists: true,
+      user: {
+        userId: superAdmin.userId,
+        email: superAdmin.email,
+        role: superAdmin.role,
+        isActive: superAdmin.isActive
+      }
+    });
+  } catch (error) {
+    console.error('Verify super admin error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+function generateTeacherUserId() {
+  // Generate a random 5-digit number
+  return Math.floor(10000 + Math.random() * 90000).toString();
+}
+function generateStudentUserId(admissionYear) {
+  // Get last 3 digits of the year (e.g., 2021 -> 121)
+  const yearPart = (admissionYear % 1000).toString().padStart(3, '0');
+  // Generate a random 5-digit number
+  const uniquePart = Math.floor(10000 + Math.random() * 90000).toString();
+  return yearPart + uniquePart; // e.g., '12106635'
+}
+function generatePassword() {
+  return Math.random().toString(36).slice(-8); // 8-char random password
+}
+
+export default router; 
+}
+
+class.js (routes) {
+    import express from 'express';
 import Class from '../models/Class.js';
 import School from '../models/School.js';
 import User from '../models/User.js';
@@ -533,9 +1017,474 @@ router.post('/timetable', auth, async (req, res) => {
   }
 });
 
-export default router; }
+export default router; 
+}
 
-user.js(routes) {import express from 'express';
+student.js (routes) {
+    import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import crypto from 'crypto';
+import User from '../models/User.js';
+import School from '../models/School.js';
+import Class from '../models/Class.js';
+import { auth, checkRole } from '../middleware/auth.js';
+
+const router = express.Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/students/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage: storage });
+
+// Generate random password
+const generatePassword = () => {
+  return crypto.randomBytes(4).toString('hex');
+};
+
+// Get all students for a school
+router.get('/', auth, checkRole('ADMIN'), async (req, res) => {
+  console.log('GET /api/admin/students: req.user', req.user);
+  try {
+    const students = await User.find({ schoolId: req.user.schoolId, role: 'STUDENT' });
+    res.json(students);
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Add new student
+router.post('/', auth, checkRole('ADMIN'), upload.single('image'), async (req, res) => {
+  console.log('POST /api/admin/students: req.user', req.user);
+  try {
+    // Ensure schoolId is available from req.user
+    if (!req.user || !req.user.schoolId) {
+      console.error('req.user.schoolId is missing during student creation', req.user);
+      return res.status(400).json({ message: 'School ID not found for authenticated user.' });
+    }
+
+    const school = await School.findById(req.user.schoolId);
+    if (!school) {
+      return res.status(404).json({ message: 'School not found' });
+    }
+
+    // Get class details to extract class number
+    const classDetails = await Class.findById(req.body.classId);
+    if (!classDetails) {
+      return res.status(404).json({ message: 'Class not found' });
+    }
+
+    // Extract class number from class name (assuming format like "Class 10" or "10")
+    const classNumber = classDetails.name.replace(/[^0-9]/g, '');
+    if (!classNumber) {
+      return res.status(400).json({ message: 'Invalid class name format. Class name should contain a number.' });
+    }
+
+    // Pad class number to 2 digits
+    const paddedClassNumber = classNumber.padStart(2, '0');
+
+    // Find the last student in this class to get the next sequence number
+    const lastStudent = await User.findOne(
+      { 
+        schoolId: req.user.schoolId,
+        role: 'STUDENT',
+        classId: req.body.classId
+      },
+      { userId: 1 },
+      { sort: { userId: -1 } }
+    );
+
+    let sequenceNumber;
+    if (lastStudent) {
+      // Extract the sequence number from the last student's userId
+      const lastSequence = parseInt(lastStudent.userId.slice(-4));
+      sequenceNumber = (lastSequence + 1).toString().padStart(4, '0');
+    } else {
+      // If no students in this class yet, start with 0001
+      sequenceNumber = '0001';
+    }
+
+    // Construct the 6-digit userId: classNumber (2 digits) + sequence (4 digits)
+    const userId = `${paddedClassNumber}${sequenceNumber}`;
+
+    // Check if student with this email already exists in this school
+    const existingEmailUser = await User.findOne({
+      email: req.body.email,
+      schoolId: req.user.schoolId,
+      role: 'STUDENT'
+    });
+
+    if (existingEmailUser) {
+      return res.status(400).json({ message: 'Student with this email already exists in this school' });
+    }
+
+    const password = generatePassword(); // Keep unhashed password here for response
+
+    const student = new User({
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      email: req.body.email,
+      phone: req.body.phone,
+      classId: req.body.classId,
+      section: req.body.section,
+      rollNo: req.body.rollNo,
+      admissionNo: req.body.admissionNo,
+      parentName: req.body.parentName,
+      parentPhone: req.body.parentPhone,
+      schoolId: req.user.schoolId,
+      userId,
+      password,
+      role: 'STUDENT',
+      image: req.file ? `/uploads/students/${req.file.filename}` : null
+    });
+
+    const newStudent = await student.save();
+
+    res.status(201).json({
+      student: newStudent.toJSON(),
+      credentials: {
+        userId: userId,
+        password: password
+      }
+    });
+  } catch (error) {
+    console.error('Error adding student:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Update student by ID
+router.put('/:id', auth, checkRole('ADMIN'), upload.single('image'), async (req, res) => {
+  console.log(`PUT /api/admin/students/${req.params.id}: req.user`, req.user);
+  try {
+    const { id } = req.params;
+    if (!req.user || !req.user.schoolId) {
+      return res.status(400).json({ message: 'School ID not found for authenticated user.' });
+    }
+
+    const student = await User.findOneAndUpdate(
+      { _id: id, schoolId: req.user.schoolId, role: 'STUDENT' },
+      { ...req.body, image: req.file ? `/uploads/students/${req.file.filename}` : req.body.image || null },
+      { new: true }
+    );
+
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found or not authorized' });
+    }
+
+    res.json(student);
+  } catch (error) {
+    console.error('Error updating student:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Delete student by ID
+router.delete('/:id', auth, checkRole('ADMIN'), async (req, res) => {
+  console.log(`DELETE /api/admin/students/${req.params.id}: req.user`, req.user);
+  try {
+    const { id } = req.params;
+    if (!req.user || !req.user.schoolId) {
+      return res.status(400).json({ message: 'School ID not found for authenticated user.' });
+    }
+    const student = await User.findOneAndDelete({ _id: id, schoolId: req.user.schoolId, role: 'STUDENT' });
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found or not authorized' });
+    }
+    res.json({ message: 'Student deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting student:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get current student's profile
+router.get('/me', auth, checkRole('STUDENT'), async (req, res) => {
+  try {
+    const student = await User.findOne({ _id: req.user._id, role: 'STUDENT' }).select('-password');
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    res.json(student);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update current student's profile (only if not finalized)
+router.put('/me', auth, checkRole('STUDENT'), async (req, res) => {
+  try {
+    const student = await User.findOne({ _id: req.user._id, role: 'STUDENT' });
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    if (student.studentProfileFinalized) {
+      return res.status(403).json({ message: 'Profile already finalized. No further edits allowed.' });
+    }
+    // Save all fields (add validation as needed)
+    Object.assign(student, req.body);
+    student.studentProfileFinalized = true;
+    await student.save();
+    res.json({ message: 'Profile updated and finalized', student });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+export default router; 
+}
+
+teacher.js (routes) {
+    import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import crypto from 'crypto';
+import User from '../models/User.js';
+import School from '../models/School.js';
+import { auth, checkRole } from '../middleware/auth.js';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const router = express.Router();
+
+// Configure multer for file upload
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/teachers')
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname))
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Not an image! Please upload an image.'), false);
+    }
+  }
+});
+
+// Helper to generate teacher userId
+function generateTeacherUserId() {
+  return Math.floor(10000 + Math.random() * 90000).toString(); // 5 digits
+}
+
+// Generate random password
+const generatePassword = () => {
+  return crypto.randomBytes(4).toString('hex');
+};
+
+// Get all teachers for a school
+router.get('/', auth, checkRole('ADMIN'), async (req, res) => {
+  try {
+    const schoolId = req.user.schoolId;
+    const teachers = await User.find({ schoolId, role: 'TEACHER' });
+    res.json(teachers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+
+// Add a new teacher
+router.post('/', auth, checkRole('ADMIN'), upload.single('image'), async (req, res) => {
+  try {
+    const schoolId = req.user.schoolId;
+    const school = await School.findById(schoolId);
+    
+    if (!school) {
+      return res.status(404).json({ message: 'School not found' });
+    }
+
+    const userId = generateTeacherUserId();
+    const password = generatePassword();
+
+    // Check if user already exists by email or generated userId
+    const existingUser = await User.findOne({ 
+      $or: [{ email: req.body.email }, { userId: userId }],
+      schoolId,
+      role: 'TEACHER'
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ message: 'Teacher with this email or User ID already exists' });
+    }
+
+    const teacher = new User({
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      email: req.body.email,
+      phone: req.body.phone,
+      subject: req.body.subject,
+      qualification: req.body.qualification,
+      joiningDate: req.body.joiningDate,
+      schoolId,
+      userId,
+      password,
+      role: 'TEACHER',
+      image: req.file ? `/uploads/teachers/${req.file.filename}` : null
+    });
+
+    const newTeacher = await teacher.save();
+
+    // Send email with credentials
+    try {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+
+      await transporter.sendMail({
+        from: `"${school.name}" <${process.env.EMAIL_USER}>`,
+        to: newTeacher.email,
+        subject: 'Your Account Credentials',
+        text: `Welcome to ${school.name}!\n\nYour User ID: ${userId}\nYour Password: ${password}\n\nPlease log in and change your password after first login.`
+      });
+    } catch (emailError) {
+      console.error('Failed to send email:', emailError);
+      // Continue with the response even if email fails
+    }
+
+    res.status(201).json({
+      teacher: newTeacher.toJSON(),
+      credentials: {
+        userId,
+        password
+      }
+    });
+  } catch (error) {
+    console.error('Add teacher error:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Update a teacher
+router.put('/:id', auth, checkRole('ADMIN'), upload.single('image'), async (req, res) => {
+  try {
+    const schoolId = req.user.schoolId;
+    const teacher = await User.findOne({ _id: req.params.id, schoolId, role: 'TEACHER' });
+    
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+
+    const updates = { ...req.body };
+    if (req.file) {
+      updates.image = `/uploads/teachers/${req.file.filename}`;
+    }
+    if (updates.email && updates.email !== teacher.email) {
+      const existingEmailUser = await User.findOne({ email: updates.email, schoolId, role: 'TEACHER' });
+      if (existingEmailUser) {
+        return res.status(400).json({ message: 'Another teacher with this email already exists' });
+      }
+    }
+
+    Object.assign(teacher, updates);
+    const updatedTeacher = await teacher.save();
+    
+    res.json(updatedTeacher);
+  } catch (error) {
+    console.error('Update teacher error:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Delete a teacher
+router.delete('/:id', auth, checkRole('ADMIN'), async (req, res) => {
+  try {
+    const schoolId = req.user.schoolId;
+    const teacher = await User.findOne({ _id: req.params.id, schoolId, role: 'TEACHER' });
+    
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+
+    await teacher.deleteOne();
+    res.json({ message: 'Teacher deleted successfully' });
+  } catch (error) {
+    console.error('Delete teacher error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get current teacher's profile
+router.get('/me', auth, checkRole('TEACHER'), async (req, res) => {
+  try {
+    const teacher = await User.findOne({ _id: req.user._id, role: 'TEACHER' }).select('-password');
+    if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
+    res.json(teacher);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update current teacher's profile (only if not finalized)
+router.put('/me', auth, checkRole('TEACHER'), async (req, res) => {
+  try {
+    const teacher = await User.findOne({ _id: req.user._id, role: 'TEACHER' });
+    if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
+    if (teacher.profileFinalized) {
+      return res.status(403).json({ message: 'Profile already finalized. No further edits allowed.' });
+    }
+    // Validate required fields
+    const requiredFields = [
+      'permanentAddress', 'currentAddress', 'aadharNumber', 'panNumber',
+      'motherName', 'fatherName', 'bankAccountNumber', 'ifscCode'
+    ];
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        return res.status(400).json({ message: `Missing required field: ${field}` });
+      }
+    }
+    // Validate Aadhar (12 digits)
+    if (!/^\d{12}$/.test(req.body.aadharNumber)) {
+      return res.status(400).json({ message: 'Invalid Aadhar number format' });
+    }
+    // Validate PAN (5 letters, 4 digits, 1 letter)
+    if (!/^[A-Z]{5}\d{4}[A-Z]{1}$/.test(req.body.panNumber)) {
+      return res.status(400).json({ message: 'Invalid PAN number format' });
+    }
+    // Validate IFSC (4 letters, 0, 6 digits)
+    if (!/^[A-Z]{4}0\d{6}$/.test(req.body.ifscCode)) {
+      return res.status(400).json({ message: 'Invalid IFSC code format' });
+    }
+    // Save all fields
+    Object.assign(teacher, req.body);
+    teacher.profileFinalized = true;
+    await teacher.save();
+    res.json({ message: 'Profile updated and finalized', teacher });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+export default router; 
+}
+
+user.js (routes) {
+    import express from 'express';
 import { body, validationResult } from 'express-validator';
 import User from '../models/User.js';
 import School from '../models/School.js';
@@ -718,194 +1667,11 @@ router.delete('/:userId', auth, checkRole('ADMIN'), async (req, res) => {
   }
 });
 
-export default router; }
+export default router; 
+}
 
-auth.js(routes) {import express from 'express';
-import { body, validationResult } from 'express-validator';
-import User from '../models/User.js';
-import School from '../models/School.js';
-import { auth, checkRole, checkSchoolAccess } from '../middleware/auth.js';
-
-const router = express.Router();
-
-// Get all users for a school (Admin only)
-router.get('/school/:schoolId', [
-  auth,
-  checkRole('ADMIN'),
-  checkSchoolAccess
-], async (req, res) => {
-  try {
-    const school = await School.findOne({ schoolId: req.params.schoolId });
-    if (!school) {
-      return res.status(404).json({ message: 'School not found' });
-    }
-
-    const users = await User.find({ 
-      schoolId: school._id,
-      isActive: true 
-    }).select('-password');
-
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Register new user (Admin only)
-router.post('/register', [
-  auth,
-  checkRole('ADMIN'),
-  body('schoolId').notEmpty(),
-  body('userId').notEmpty().trim(),
-  body('email').isEmail(),
-  body('password').isLength({ min: 6 }),
-  body('role').isIn(['TEACHER', 'STUDENT']),
-  body('firstName').notEmpty().trim(),
-  body('lastName').notEmpty().trim()
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const {
-      schoolId,
-      userId,
-      email,
-      password,
-      role,
-      firstName,
-      lastName
-    } = req.body;
-
-    // Check if school exists
-    const school = await School.findOne({ schoolId });
-    if (!school) {
-      return res.status(404).json({ message: 'School not found' });
-    }
-
-    // Check if user already exists
-    const existingUser = await User.findOne({
-      $or: [
-        { userId },
-        { email }
-      ]
-    });
-
-    if (existingUser) {
-      return res.status(400).json({ 
-        message: 'User ID or email already exists' 
-      });
-    }
-
-    // Create new user
-    const user = new User({
-      userId,
-      schoolId: school._id,
-      email,
-      password,
-      role,
-      firstName,
-      lastName
-    });
-
-    await user.save();
-
-    // Return user without password
-    const userResponse = user.toObject();
-    delete userResponse.password;
-
-    res.status(201).json(userResponse);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Update user (Admin only)
-router.put('/:userId', [
-  auth,
-  checkRole('ADMIN'),
-  body('email').optional().isEmail(),
-  body('firstName').optional().trim(),
-  body('lastName').optional().trim(),
-  body('isActive').optional().isBoolean()
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const user = await User.findOne({ 
-      userId: req.params.userId,
-      isActive: true 
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Check if admin has access to this user's school
-    if (req.user.role !== 'SUPER_ADMIN' && 
-        req.user.schoolId.toString() !== user.schoolId.toString()) {
-      return res.status(403).json({ 
-        message: 'Not authorized to update this user' 
-      });
-    }
-
-    // Update fields
-    Object.keys(req.body).forEach(key => {
-      if (req.body[key] !== undefined && key !== 'password') {
-        user[key] = req.body[key];
-      }
-    });
-
-    await user.save();
-
-    // Return user without password
-    const userResponse = user.toObject();
-    delete userResponse.password;
-
-    res.json(userResponse);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Deactivate user (Admin only)
-router.delete('/:userId', auth, checkRole('ADMIN'), async (req, res) => {
-  try {
-    const user = await User.findOne({ 
-      userId: req.params.userId,
-      isActive: true 
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Check if admin has access to this user's school
-    if (req.user.role !== 'SUPER_ADMIN' && 
-        req.user.schoolId.toString() !== user.schoolId.toString()) {
-      return res.status(403).json({ 
-        message: 'Not authorized to deactivate this user' 
-      });
-    }
-
-    // Soft delete
-    user.isActive = false;
-    await user.save();
-
-    res.json({ message: 'User deactivated successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-export default router; }
-
-index.js {import express from 'express';
+index.js {
+    import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -919,6 +1685,7 @@ import schoolRoutes from './routes/school.js';
 import userRoutes from './routes/user.js';
 import superAdminRoutes from './routes/superAdmin.js';
 import teacherRoutes from './routes/teacher.js';
+import teacherInfoRoutes from './routes/teacherInfo.js';
 import studentRoutes from './routes/student.js';
 import classRoutes from './routes/class.js';
 import timetableRoutes from './routes/timetable.js';
@@ -930,6 +1697,7 @@ import jwt from 'jsonwebtoken';
 import Timetable from './models/Timetable.js';
 import { auth, checkRole } from './middleware/auth.js';
 import messageRoutes from './routes/message.js';
+import assignmentRoutes from './routes/assignment.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -964,7 +1732,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Create uploads directories if they don't exist
-const uploadDirs = ['uploads', 'uploads/teachers', 'uploads/students'];
+const uploadDirs = ['uploads', 'uploads/teachers', 'uploads/students', 'uploads/assignments'];
 uploadDirs.forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -991,7 +1759,10 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/fees', feesRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/message', messageRoutes);
+
+app.use('/api/teacher/info', teacherInfoRoutes);
 app.use('/api/teacher', teacherRoutes);
+app.use('/api/assignment', assignmentRoutes);
 
 
 // Add this to your index.js for testing
@@ -1012,9 +1783,474 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-}); }
+}); 
+}
 
-app.jsx{import React from 'react';
+StudentAssignments.jsx {
+    import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import {
+  Box, Button, Typography, List, ListItem, ListItemText, Divider,
+  Table, TableBody, TableCell, TableHead, TableRow
+} from '@mui/material';
+
+const StudentAssignments = () => {
+  const [assignments, setAssignments] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+  const [file, setFile] = useState(null);
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  useEffect(() => {
+    fetchAssignments();
+    fetchSubmissions();
+  }, []);
+
+  const fetchAssignments = async () => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/assignment/class/${user.classId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAssignments(response.data);
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+    }
+  };
+
+  const fetchSubmissions = async () => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/assignment/submission/student/${user._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSubmissions(response.data);
+    } catch (error) {
+      console.error('Error fetching submissions:', error);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const handleSubmit = async (assignmentId) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      await axios.post(`http://localhost:5000/api/assignment/submission/${assignmentId}`, formData, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+      });
+      setFile(null);
+      fetchSubmissions();
+    } catch (error) {
+      console.error('Error submitting assignment:', error);
+    }
+  };
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        Assignments
+      </Typography>
+      <List>
+        {assignments.map(assignment => (
+          <div key={assignment._id}>
+            <ListItem>
+              <ListItemText
+                primary={`${assignment.subject}: ${assignment.topic}`}
+                secondary={`Due: ${assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No due date'}`}
+              />
+              <Button
+                variant="contained"
+                href={`http://localhost:5000${assignment.filePath}`}
+                download
+              >
+                Download
+              </Button>
+              <Button
+                variant="contained"
+                component="label"
+                sx={{ ml: 2 }}
+              >
+                Upload Submission
+                <input
+                  type="file"
+                  hidden
+                  onChange={handleFileChange}
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                />
+              </Button>
+              {file && (
+                <Button
+                  variant="contained"
+                  onClick={() => handleSubmit(assignment._id)}
+                  sx={{ ml: 2 }}
+                >
+                  Submit
+                </Button>
+              )}
+            </ListItem>
+            <Divider />
+          </div>
+        ))}
+      </List>
+
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          My Submissions
+        </Typography>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Assignment</TableCell>
+              <TableCell>Submission Date</TableCell>
+              <TableCell>Marks</TableCell>
+              <TableCell>Remarks</TableCell>
+              <TableCell>File</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {submissions.map(submission => (
+              <TableRow key={submission._id}>
+                <TableCell>{submission.assignmentId.subject}: {submission.assignmentId.topic}</TableCell>
+                <TableCell>{new Date(submission.submissionDate).toLocaleDateString()}</TableCell>
+                <TableCell>{submission.marks !== null ? submission.marks : 'Not graded'}</TableCell>
+                <TableCell>{submission.remarks || 'No remarks'}</TableCell>
+                <TableCell>
+                  <a href={`http://localhost:5000${submission.filePath}`} target="_blank" rel="noopener noreferrer">
+                    Download
+                  </a>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Box>
+    </Box>
+  );
+};
+
+export default StudentAssignments;
+}
+
+Assignment.js {
+    import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import {
+  Box, Button, TextField, MenuItem, Select, InputLabel, FormControl,
+  Typography, Paper, List, ListItem, ListItemText, Divider,
+  Table, TableBody, TableCell, TableHead, TableRow, IconButton
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+
+const Assignments = () => {
+  const [assignments, setAssignments] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [subject, setSubject] = useState('');
+  const [topic, setTopic] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [classId, setClassId] = useState('');
+  const [file, setFile] = useState(null);
+  const [editId, setEditId] = useState(null);
+  const [submissions, setSubmissions] = useState([]);
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [error, setError] = useState(null);
+  const token = localStorage.getItem('token');
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const fetchClasses = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/admin/classes/teacher/classes', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('Fetched classes:', response.data); // Debug log
+      setClasses(response.data);
+      if (response.data.length > 0) {
+        setClassId(response.data[0]._id); // Set default class
+        fetchAssignments(response.data[0]._id); // Fetch assignments for the first class
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error.response?.data || error.message);
+      setError('Failed to fetch classes');
+    }
+  };
+
+  const fetchAssignments = async (classId) => {
+    if (!classId) return;
+    try {
+      const response = await axios.get(`http://localhost:5000/api/assignment/class/${classId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('Fetched assignments:', response.data); // Debug log
+      setAssignments(response.data);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching assignments:', error.response?.data || error.message);
+      setError('Failed to fetch assignments');
+    }
+  };
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!file && !editId) {
+      setError('Please select a file to upload');
+      return;
+    }
+    const formData = new FormData();
+    formData.append('subject', subject);
+    formData.append('topic', topic);
+    formData.append('dueDate', dueDate);
+    formData.append('classId', classId);
+    if (file) formData.append('file', file);
+
+    try {
+      if (editId) {
+        await axios.put(`http://localhost:5000/api/assignment/${editId}`, formData, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        });
+        setEditId(null);
+      } else {
+        await axios.post('http://localhost:5000/api/assignment', formData, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        });
+      }
+      setSubject('');
+      setTopic('');
+      setDueDate('');
+      setClassId('');
+      setFile(null);
+      setError(null);
+      fetchAssignments(classId); // Refresh assignments
+    } catch (error) {
+      console.error('Error saving assignment:', error.response?.data || error.message);
+      setError(error.response?.data?.message || 'Failed to save assignment');
+    }
+  };
+
+  const handleEdit = (assignment) => {
+    setEditId(assignment._id);
+    setSubject(assignment.subject);
+    setTopic(assignment.topic);
+    setDueDate(assignment.dueDate ? assignment.dueDate.split('T')[0] : '');
+    setClassId(assignment.classId._id);
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/assignment/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchAssignments(classId); // Refresh assignments
+      setError(null);
+    } catch (error) {
+      console.error('Error deleting assignment:', error.response?.data || error.message);
+      setError('Failed to delete assignment');
+    }
+  };
+
+  const handleViewSubmissions = async (assignmentId) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/assignment/submission/${assignmentId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('Fetched submissions:', response.data); // Debug log
+      setSubmissions(response.data);
+      setSelectedAssignment(assignmentId);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching submissions:', error.response?.data || error.message);
+      setError('Failed to fetch submissions');
+    }
+  };
+
+  const handleGradeSubmission = async (submissionId, marks, remarks) => {
+    try {
+      await axios.put(`http://localhost:5000/api/assignment/submission/${submissionId}`, { marks, remarks }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      handleViewSubmissions(selectedAssignment); // Refresh submissions
+      setError(null);
+    } catch (error) {
+      console.error('Error grading submission:', error.response?.data || error.message);
+      setError('Failed to grade submission');
+    }
+  };
+
+  const handleClassChange = (e) => {
+    const selectedClassId = e.target.value;
+    setClassId(selectedClassId);
+    fetchAssignments(selectedClassId); // Fetch assignments for selected class
+  };
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        {editId ? 'Edit Assignment' : 'Create Assignment'}
+      </Typography>
+      {error && <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <form onSubmit={handleSubmit}>
+          <TextField
+            label="Subject"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            fullWidth
+            margin="normal"
+            required
+          />
+          <TextField
+            label="Topic"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            fullWidth
+            margin="normal"
+            required
+          />
+          <TextField
+            label="Due Date"
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            fullWidth
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+          />
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Class</InputLabel>
+            <Select
+              value={classId}
+              onChange={handleClassChange}
+              required
+            >
+              <MenuItem value="">Select Class</MenuItem>
+              {classes.map(cls => (
+                <MenuItem key={cls._id} value={cls._id}>
+                  {cls.name} {cls.section}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Button
+            variant="contained"
+            component="label"
+            sx={{ mt: 2 }}
+          >
+            Upload File
+            <input
+              type="file"
+              hidden
+              onChange={handleFileChange}
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            />
+          </Button>
+          {file && <Typography sx={{ mt: 1 }}>{file.name}</Typography>}
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            sx={{ mt: 2, ml: 2 }}
+          >
+            {editId ? 'Update' : 'Create'}
+          </Button>
+        </form>
+      </Paper>
+
+      <Typography variant="h5" gutterBottom>
+        Assignments
+      </Typography>
+      {assignments.length === 0 && <Typography>No assignments found for selected class</Typography>}
+      <List>
+        {assignments.map(assignment => (
+          <div key={assignment._id}>
+            <ListItem>
+              <ListItemText
+                primary={`${assignment.subject}: ${assignment.topic}`}
+                secondary={`Class: ${assignment.classId.name} ${assignment.classId.section} | Due: ${assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No due date'}`}
+              />
+              <Button onClick={() => handleViewSubmissions(assignment._id)}>
+                View Submissions
+              </Button>
+              <IconButton onClick={() => handleEdit(assignment)}>
+                <EditIcon />
+              </IconButton>
+              <IconButton onClick={() => handleDelete(assignment._id)}>
+                <DeleteIcon />
+              </IconButton>
+            </ListItem>
+            <Divider />
+          </div>
+        ))}
+      </List>
+
+      {selectedAssignment && (
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h5" gutterBottom>
+            Submissions
+          </Typography>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Student</TableCell>
+                <TableCell>Roll No</TableCell>
+                <TableCell>File</TableCell>
+                <TableCell>Submission Date</TableCell>
+                <TableCell>Marks</TableCell>
+                <TableCell>Remarks</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {submissions.map(submission => (
+                <TableRow key={submission._id}>
+                  <TableCell>{submission.studentId.firstName} {submission.studentId.lastName}</TableCell>
+                  <TableCell>{submission.studentId.rollNo}</TableCell>
+                  <TableCell>
+                    <a href={`http://localhost:5000${submission.filePath}`} target="_blank" rel="noopener noreferrer">
+                      Download
+                    </a>
+                  </TableCell>
+                  <TableCell>{new Date(submission.submissionDate).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <TextField
+                      type="number"
+                      defaultValue={submission.marks || ''}
+                      onBlur={(e) => handleGradeSubmission(submission._id, e.target.value, submission.remarks)}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <TextField
+                      defaultValue={submission.remarks || ''}
+                      onBlur={(e) => handleGradeSubmission(submission._id, submission.marks, e.target.value)}
+                      size="small"
+                      fullWidth
+                    />
+                  </TableCell>
+                  <TableCell />
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+export default Assignments;
+}
+
+app.jsx {
+    import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SnackbarProvider } from 'notistack';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -1042,6 +2278,7 @@ import Profile from './components/Teacher/Profile';
 import Timetable from './components/Admin/Timetable';
 import StudentTimetable from './components/Student/StudentTimetable';
 import StudentAttendance from './components/Student/StudentAttendance';
+import StudentAssignments from './components/Student/StudentAssignments';
 import MessagingPanel from './components/Student/MessagingPanel';
 import AdminMessages from './components/Admin/Messages';
 import Setting from './components/SuperAdmin/Setting';
@@ -1065,13 +2302,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 };
 
 const theme = createTheme({
-  // You can customize your theme here
   palette: {
     primary: {
-      main: '#ff9800', // Orange to match your current design
+      main: '#ff9800',
     },
     secondary: {
-      main: '#007bff', // Blue for buttons
+      main: '#007bff',
     },
   },
   typography: {
@@ -1155,6 +2391,7 @@ const App = () => {
               <Route path="profile" element={<StudentProfile />} />
               <Route path="timetable" element={<StudentTimetable />} />
               <Route path="attendance" element={<StudentAttendance />} />
+              <Route path="assignments" element={<StudentAssignments />} />
               <Route path="messages" element={<MessagingPanel user={JSON.parse(localStorage.getItem('user'))} />} />
             </Route>
 
