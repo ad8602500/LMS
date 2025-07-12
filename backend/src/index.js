@@ -59,7 +59,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Create uploads directories if they don't exist
-const uploadDirs = ['uploads', 'uploads/teachers', 'uploads/students', 'uploads/assignments', 'uploads/submissions'];
+const uploadDirs = ['uploads', 'uploads/teachers', 'uploads/students', 'uploads/assignments'];
 uploadDirs.forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
