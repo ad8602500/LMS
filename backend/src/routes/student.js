@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import User from '../models/User.js';
 import School from '../models/School.js';
 import Class from '../models/Class.js';
+import StudentInfo from '../models/StudentInfo.js';
 import { auth, checkRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -182,12 +183,31 @@ router.delete('/:id', auth, checkRole('ADMIN'), async (req, res) => {
   }
 });
 
-// Get current student's profile
+// Get current student's profile (with addresses from StudentInfo)
 router.get('/me', auth, checkRole('STUDENT'), async (req, res) => {
   try {
     const student = await User.findOne({ _id: req.user._id, role: 'STUDENT' }).select('-password');
     if (!student) return res.status(404).json({ message: 'Student not found' });
-    res.json(student);
+    const info = await StudentInfo.findOne({ user: req.user._id });
+    res.json({
+      ...student.toObject(),
+      permanentAddress: info?.permanentAddress || {},
+      correspondingAddress: info?.correspondingAddress || {},
+      payingGuestAddress: info?.payingGuestAddress || {},
+      // Add extra personal info fields
+      dob: info?.dob || '',
+      gender: info?.gender || '',
+      category: info?.category || '',
+      emergencyContact: info?.emergencyContact || '',
+      motherName: info?.motherName || '',
+      motherMobile: info?.motherMobile || '',
+      fatherMobile: info?.fatherMobile || '',
+      landline: info?.landline || '',
+      fatherEmail: info?.fatherEmail || '',
+      lpuEmail: info?.lpuEmail || '',
+      photo: info?.photo || '',
+      studentProfileFinalized: info?.finalized || false
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -211,4 +231,47 @@ router.put('/me', auth, checkRole('STUDENT'), async (req, res) => {
   }
 });
 
-export default router; 
+// Save student addresses (permanent, corresponding, paying guest) in StudentInfo
+router.post('/update-addresses', auth, checkRole('STUDENT'), async (req, res) => {
+  try {
+    let info = await StudentInfo.findOne({ user: req.user._id });
+    if (info && info.finalized) {
+      return res.status(403).json({ message: 'Profile already finalized. No further edits allowed.' });
+    }
+    const extraFields = {
+      dob: req.body.dob,
+      gender: req.body.gender,
+      category: req.body.category,
+      emergencyContact: req.body.emergencyContact,
+      motherName: req.body.motherName,
+      motherMobile: req.body.motherMobile,
+      fatherMobile: req.body.fatherMobile,
+      landline: req.body.landline,
+      fatherEmail: req.body.fatherEmail,
+      lpuEmail: req.body.lpuEmail,
+      photo: req.body.photo
+    };
+    if (!info) {
+      info = new StudentInfo({
+        user: req.user._id,
+        permanentAddress: req.body.permanentAddress,
+        correspondingAddress: req.body.correspondingAddress,
+        payingGuestAddress: req.body.payingGuestAddress,
+        ...extraFields,
+        finalized: true
+      });
+    } else {
+      info.permanentAddress = req.body.permanentAddress;
+      info.correspondingAddress = req.body.correspondingAddress;
+      info.payingGuestAddress = req.body.payingGuestAddress;
+      Object.assign(info, extraFields);
+      info.finalized = true;
+    }
+    await info.save();
+    res.json({ message: 'Addresses and extra info updated and profile finalized.' });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+export default router;

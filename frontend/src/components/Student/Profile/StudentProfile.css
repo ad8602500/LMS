@@ -1,3 +1,27 @@
+/* --- Custom card and success message styles for StudentProfile --- */
+.student-profile-card {
+  max-width: 900px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(44,62,80,0.08);
+  padding: 32px 18px 24px 18px;
+  margin-top: 30px;
+  margin-bottom: 30px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  transition: box-shadow 0.2s;
+}
+
+.success-message {
+  color: #2ecc71;
+  margin-top: 18px;
+  font-weight: 600;
+  font-size: 1.08em;
+  background: #eafaf1;
+  border-radius: 6px;
+  padding: 10px 16px;
+  text-align: center;
+}
 /* Ensure root and html take full viewport and no horizontal scroll */
 html, body, #root {
   width: 100vw;
